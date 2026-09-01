@@ -11,7 +11,7 @@
     * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
     body { background-color: #0b1120; color: #f8fafc; }
     .glass-card { background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); }
-    .active-period { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.15); }
+    .active-period { border: 2px solid #38bdf8 !important; background: rgba(56, 189, 248, 0.15) !important; }
     .badge-comci { background: #0284c7; color: white; }
     .badge-neis { background: #059669; color: white; }
     .badge-sheet { background: #d97706; color: white; }
@@ -43,8 +43,8 @@
           <i class="fa-solid fa-sun"></i>
           <span id="weather-text">강원 태백 (맑음) 18°C</span>
         </div>
-        <div id="clock" class="text-3xl font-black tracking-tight text-white mt-0.5">10:38:22</div>
-        <div id="date-display" class="text-xs text-slate-400 font-medium">2026.09.01 (화)요일</div>
+        <div id="clock" class="text-3xl font-black tracking-tight text-white mt-0.5">--:--:--</div>
+        <div id="date-display" class="text-xs text-slate-400 font-medium">로딩 중...</div>
       </div>
       <div class="flex items-center gap-2 text-slate-400">
         <button onclick="toggleFullScreen()" title="전체화면" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition border border-slate-700 text-slate-300"><i class="fa-solid fa-expand"></i></button>
@@ -88,7 +88,7 @@
           </div>
           <span id="timetable-source-badge" class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">실제 데이터 연동</span>
         </div>
-        <div id="regular-timetable-list" class="space-y-1.5 text-sm">
+        <div id="regular-timetable-list" class="space-y-2.5">
           <div class="text-slate-500 text-xs py-8 text-center">시간표 데이터를 불러오는 중...</div>
         </div>
       </div>
@@ -104,11 +104,11 @@
           </div>
           <span id="afterschool-badge" class="text-xs px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">방과후 교육과정</span>
         </div>
-        <div class="flex justify-between items-center text-xs text-slate-400 mb-2 px-1">
-          <span id="afterschool-week-label">9월 1주차</span>
+        <div class="flex justify-between items-center text-xs text-slate-400 mb-3 px-1">
+          <span id="afterschool-week-label">주차 확인 중...</span>
           <span class="text-amber-400 font-bold">[구글시트 실시간]</span>
         </div>
-        <div id="afterschool-timetable-list" class="space-y-2 text-sm">
+        <div id="afterschool-timetable-list" class="space-y-2.5">
           <div class="text-slate-500 text-xs py-8 text-center">방과후 시간표를 불러오는 중...</div>
         </div>
       </div>
@@ -302,7 +302,7 @@
         var list = [];
         dayPeriods.forEach(function(item, idx) {
           if (item && item.subject && item.subject.trim() !== '') {
-            list.push({ period: idx + 1, subject: item.subject.trim(), teacher: item.teacher || '' });
+            list.push({ period: (idx + 1) + "교시", subject: item.subject.trim(), teacher: item.teacher || '' });
           }
         });
         regularTimetableData[day] = list;
@@ -323,12 +323,14 @@
           var subject = r.ITRT_CNT_NM.trim();
 
           if (dayIndex >= 1 && dayIndex <= 5 && subject) {
-            regularTimetableData[dayIndex].push({ period: period, subject: subject, teacher: '' });
+            regularTimetableData[dayIndex].push({ period: period + "교시", subject: subject, teacher: '' });
           }
         }
       });
       for (var d = 1; d <= 5; d++) {
-        regularTimetableData[d].sort(function(a, b) { return a.period - b.period; });
+        regularTimetableData[d].sort(function(a, b) { 
+          return parseInt(a.period) - parseInt(b.period); 
+        });
       }
     }
 
@@ -352,7 +354,7 @@
             for (var d = 1; d <= 5; d++) {
               var val = rows[rIdx][d] ? rows[rIdx][d].trim() : '';
               if (val && val !== '') {
-                regularTimetableData[d].push({ period: p, subject: val, teacher: '' });
+                regularTimetableData[d].push({ period: p + "교시", subject: val, teacher: '' });
               }
             }
           }
@@ -366,7 +368,7 @@
                 for (var d = 1; d <= 5; d++) {
                   var val = rows[r + p][d] ? rows[r + p][d].trim() : '';
                   if (val && val !== '') {
-                    regularTimetableData[d].push({ period: p, subject: val, teacher: '' });
+                    regularTimetableData[d].push({ period: p + "교시", subject: val, teacher: '' });
                   }
                 }
               }
@@ -411,8 +413,8 @@
 
       if (dayIndex === 1) {
         return [
-          { period: "8~9교시", subject: "TOEIC", teacher: "" },
-          { period: "10~11교시", subject: "한국사", teacher: "" }
+          { period: "8~9교시", subject: "TOEIC", teacher: "외국어과" },
+          { period: "10~11교시", subject: "한국사", teacher: "인문사회과" }
         ];
       }
 
@@ -505,7 +507,9 @@
       renderCurrentDay();
     }
 
+    // 첫 번째 이미지 UI 디자인 규격 100% 동일 렌더링
     function renderCurrentDay() {
+      // 1. 정규 수업 목록 렌더링 (3단 그리드: 교시(노랑) / 과목(흰색) / 교사(회색))
       var regularList = regularTimetableData[selectedDay] || [];
       var regContainer = document.getElementById('regular-timetable-list');
       regContainer.innerHTML = '';
@@ -516,14 +520,21 @@
         regContainer.innerHTML = '<div class="text-center py-8 text-slate-500 font-medium">등록된 수업 일정이 없습니다.</div>';
       } else {
         regularList.forEach(function(item) {
+          var pNum = parseInt(item.period) || 0;
           var row = document.createElement('div');
-          row.id = 'period-row-' + item.period;
-          row.className = "p-2 rounded-xl bg-slate-800/40 flex justify-between items-center border border-slate-700/30";
-          row.innerHTML = '<div class="flex items-center gap-3"><span class="px-2 py-0.5 text-xs font-black rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">' + item.period + '교시</span><span class="font-bold text-slate-100">' + item.subject + '</span></div><span class="text-xs text-slate-400 font-medium">' + item.teacher + '</span>';
+          row.id = 'period-row-' + pNum;
+          row.className = "px-5 py-3 rounded-xl bg-slate-800/60 flex justify-between items-center border border-slate-700/50 shadow-sm transition";
+          row.innerHTML = 
+            '<div class="flex items-center gap-4 flex-grow">' +
+              '<span class="w-16 text-amber-400 font-black text-base tracking-tight text-left">' + item.period + '</span>' +
+              '<span class="text-white font-bold text-base tracking-wide">' + item.subject + '</span>' +
+            '</div>' +
+            '<span class="text-slate-400 text-sm font-medium text-right shrink-0">' + (item.teacher || '') + '</span>';
           regContainer.appendChild(row);
         });
       }
 
+      // 2. 방과후 수업 목록 렌더링 (3단 그리드 동일 적용)
       var afterList = getAfterschoolList(selectedDay);
       var afterContainer = document.getElementById('afterschool-timetable-list');
       afterContainer.innerHTML = '';
@@ -533,8 +544,13 @@
       } else {
         afterList.forEach(function(item) {
           var div = document.createElement('div');
-          div.className = "p-2.5 rounded-xl bg-slate-800/50 flex justify-between items-center border border-slate-700/40";
-          div.innerHTML = '<span class="font-bold text-amber-400 text-xs px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">' + item.period + '</span><span class="font-semibold text-slate-200 text-sm">' + item.subject + '</span><span class="text-xs text-slate-400">' + item.teacher + '</span>';
+          div.className = "px-5 py-3 rounded-xl bg-slate-800/60 flex justify-between items-center border border-slate-700/50 shadow-sm transition";
+          div.innerHTML = 
+            '<div class="flex items-center gap-4 flex-grow">' +
+              '<span class="w-20 text-amber-400 font-black text-base tracking-tight text-left">' + item.period + '</span>' +
+              '<span class="text-white font-bold text-base tracking-wide">' + item.subject + '</span>' +
+            '</div>' +
+            '<span class="text-slate-400 text-sm font-medium text-right shrink-0">' + (item.teacher || '') + '</span>';
           afterContainer.appendChild(div);
         });
       }
@@ -587,7 +603,7 @@
           activeIndex = item.period || 0;
           
           var todayList = regularTimetableData[now.getDay()] || [];
-          var matchSubject = todayList.find(function(t) { return t.period === activeIndex; });
+          var matchSubject = todayList.find(function(t) { return parseInt(t.period) === activeIndex; });
           if (matchSubject) {
             subjectText = matchSubject.subject;
           } else {
@@ -608,9 +624,9 @@
         var el = document.getElementById('period-row-' + p);
         if (el) {
           if (selectedDay === today && p === activePeriod) {
-            el.className = "p-2 rounded-xl active-period flex justify-between items-center transition duration-300";
+            el.className = "px-5 py-3 rounded-xl active-period flex justify-between items-center transition duration-300";
           } else {
-            el.className = "p-2 rounded-xl bg-slate-800/40 flex justify-between items-center border border-slate-700/30";
+            el.className = "px-5 py-3 rounded-xl bg-slate-800/60 flex justify-between items-center border border-slate-700/50 shadow-sm transition";
           }
         }
       }

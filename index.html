@@ -137,7 +137,7 @@
 
   </main>
 
-  <!-- 4. 하단 구글시트 연동 공지사항 & D-Day (클린 뷰) -->
+  <!-- 4. 하단 공지사항 & 주요 일정 (클린 뷰) -->
   <footer class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
     <!-- 학급 공지사항 -->
     <div class="lg:col-span-7 glass-card rounded-2xl p-5 shadow-xl">
@@ -146,21 +146,19 @@
           <i class="fa-solid fa-bullhorn text-sky-400"></i>
           <h2 class="text-base font-bold text-white">학급 공지사항</h2>
         </div>
-        <span class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">구글시트(notices)</span>
       </div>
       <div id="notice-container" class="space-y-2 text-sm text-slate-300">
         <div class="text-slate-500 text-xs py-2">공지사항을 불러오는 중...</div>
       </div>
     </div>
 
-    <!-- 주요 일정 (D-Day) -->
+    <!-- 주요 일정 -->
     <div class="lg:col-span-5 glass-card rounded-2xl p-5 shadow-xl">
       <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-700/60">
         <div class="flex items-center gap-2">
-          <i class="fa-solid fa-flag-checkered text-amber-400"></i>
-          <h2 class="text-base font-bold text-white">주요 일정 (D-Day)</h2>
+          <i class="fa-solid fa-calendar-check text-amber-400"></i>
+          <h2 class="text-base font-bold text-white">주요 일정</h2>
         </div>
-        <span class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">구글시트(ddays)</span>
       </div>
       <div id="dday-container" class="space-y-2 text-sm">
         <div class="text-slate-500 text-xs py-2">일정을 불러오는 중...</div>
@@ -193,7 +191,7 @@
     let selectedDay = new Date().getDay();
     if (selectedDay === 0 || selectedDay === 6) selectedDay = 1;
 
-    // 요일별 시간표
+    // 요일별 정규 시간표
     const WEEKLY_REGULAR_TIMETABLE = {
       1: [
         { period: 1, subject: "항공기일반", teacher: "이현규 선생님" },
@@ -242,6 +240,7 @@
       ]
     };
 
+    // 요일별 방과후 시간표
     const WEEKLY_AFTERSCHOOL_TIMETABLE = {
       1: [
         { period: 8, subject: "기체정비(실)", teacher: "임형찬 선생님" },
@@ -273,6 +272,7 @@
       ]
     };
 
+    // 요일별 급식 식단표
     const WEEKLY_MEALS = {
       1: {
         breakfast: "친환경쌀밥, 쇠고기미역국, 계란말이, 오이도라지생채, 배추김치",

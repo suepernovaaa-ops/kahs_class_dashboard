@@ -252,26 +252,36 @@
       return Math.min(5, Math.max(1, Math.ceil(day / 7)));
     }
 
-    // 1순위 컴시간알리미(app.exe) 우선 수신 로직
+    // 1순위 컴시간알리미 다중 엔드포인트 탐색
     async function loadRegularTimetable() {
       var badge = document.getElementById('timetable-source-badge');
       var statusBadge = document.getElementById('server-status-badge');
 
-      // [1단계] 실행 중인 app.exe(컴시간 백엔드) 다각도 파싱 시도
-      try {
-        var res = await fetch('http://localhost:5000/api/timetable?_t=' + Date.now(), { signal: AbortSignal.timeout(2500) });
-        if (res.ok) {
-          var rawData = await res.json();
-          if (parseComciFlexible(rawData)) {
-            badge.innerText = "컴시간알리미 연동";
-            badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
-            statusBadge.innerText = "컴시간 라이브";
-            renderCurrentDay();
-            return;
+      // 로컬 app.exe가 열어둘 수 있는 다양한 엔드포인트 스캔
+      var comciUrls = [
+        'http://localhost:5000/api/timetable',
+        'http://127.0.0.1:5000/api/timetable',
+        'http://localhost:5000/timetable',
+        'http://127.0.0.1:5000/timetable',
+        'http://localhost:5000/api/comci',
+        'http://127.0.0.1:5000/api/comci',
+        'http://localhost:5000/'
+      ];
+
+      for (var i = 0; i < comciUrls.length; i++) {
+        try {
+          var res = await fetch(comciUrls[i], { method: 'GET', mode: 'cors' });
+          if (res.ok) {
+            var rawData = await res.json();
+            if (parseComciFlexible(rawData)) {
+              badge.innerText = "컴시간알리미 연동";
+              badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
+              statusBadge.innerText = "컴시간 라이브";
+              renderCurrentDay();
+              return;
+            }
           }
-        }
-      } catch (e) {
-        console.log("컴시간 로컬 백엔드 연결 재시도 중...", e);
+        } catch (e) {}
       }
 
       // [2단계] 교육부 나이스(NEIS) API 조회
@@ -318,15 +328,21 @@
       }
     }
 
-    // 컴시간 JSON의 모든 반환 구조(2차원 배열, 객체 형태 등)를 100% 수용하는 파서
+    // 2학년 2반의 데이터를 심층 자동 탐색하여 파싱하는 함수
     function parseComciFlexible(data) {
+      if (!data) return false;
       regularTimetableData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
       var found = false;
 
-      // 형태 1: data['2-2'] 또는 data['2']['2']
-      var target = data['2-2'] || (data[2] && (data[2][2] || data[2]['2'] || data[2])) || data;
+      // 1. 2학년 2반 객체/배열 후보 탐색
+      var target = null;
+      if (data['2-2']) target = data['2-2'];
+      else if (data['2'] && (data['2']['2'] || data['2'][2] || data['2'][1])) target = data['2']['2'] || data['2'][2] || data['2'][1];
+      else if (data[2] && (data[2][2] || data[2]['2'] || data[2][1])) target = data[2][2] || data[2]['2'] || data[2][1];
+      else if (data.timetable && (data.timetable['2-2'] || (data.timetable[2] && data.timetable[2][2]))) target = data.timetable['2-2'] || data.timetable[2][2];
+      else target = data;
 
-      // 형태 2: 요일별 배열 (target[day] = [교시...])
+      // 2. target이 [요일][교시] 구조인 경우
       for (var day = 1; day <= 5; day++) {
         var dayList = target[day] || target[String(day)];
         if (Array.isArray(dayList) && dayList.length > 0) {
@@ -344,13 +360,13 @@
         }
       }
 
-      // 형태 3: 컴시간 원본 행/열 2차원 매트릭스 (data[교시][요일])
+      // 3. target이 [교시][요일] 매트릭스 배열인 경우
       if (!found && Array.isArray(target)) {
         for (var pIdx = 0; pIdx < target.length; pIdx++) {
           var row = target[pIdx];
           if (Array.isArray(row)) {
             for (var d = 1; d <= 5; d++) {
-              var item = row[d] || row[d - 1];
+              var item = row[d] !== undefined ? row[d] : row[d - 1];
               if (item) {
                 var subj = typeof item === 'string' ? item : (item.subject || item.name || '');
                 var teach = typeof item === 'object' ? (item.teacher || '') : '';

@@ -252,32 +252,26 @@
       return Math.min(5, Math.max(1, Math.ceil(day / 7)));
     }
 
-    // 1순위 컴시간알리미 다중 로컬 엔드포인트 탐색
+    // 1순위 컴시간알리미(app.exe) 우선 수신 로직
     async function loadRegularTimetable() {
       var badge = document.getElementById('timetable-source-badge');
       var statusBadge = document.getElementById('server-status-badge');
 
-      var comciEndpoints = [
-        'http://localhost:5000/api/timetable',
-        'http://127.0.0.1:5000/api/timetable',
-        '/api/timetable'
-      ];
-
-      for (var i = 0; i < comciEndpoints.length; i++) {
-        try {
-          var res = await fetch(comciEndpoints[i] + '?_t=' + Date.now(), { signal: AbortSignal.timeout(2000) });
-          if (res.ok) {
-            var data = await res.json();
-            var class22 = data['2-2'] || (data[2] && (data[2][2] || data[2])) || data;
-            if (class22 && parseComciTimetable(class22)) {
-              badge.innerText = "컴시간알리미 연동";
-              badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
-              statusBadge.innerText = "컴시간 라이브";
-              renderCurrentDay();
-              return;
-            }
+      // [1단계] 실행 중인 app.exe(컴시간 백엔드) 다각도 파싱 시도
+      try {
+        var res = await fetch('http://localhost:5000/api/timetable?_t=' + Date.now(), { signal: AbortSignal.timeout(2500) });
+        if (res.ok) {
+          var rawData = await res.json();
+          if (parseComciFlexible(rawData)) {
+            badge.innerText = "컴시간알리미 연동";
+            badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
+            statusBadge.innerText = "컴시간 라이브";
+            renderCurrentDay();
+            return;
           }
-        } catch (e) {}
+        }
+      } catch (e) {
+        console.log("컴시간 로컬 백엔드 연결 재시도 중...", e);
       }
 
       // [2단계] 교육부 나이스(NEIS) API 조회
@@ -308,7 +302,7 @@
         }
       } catch (e) {}
 
-      // [3단계] 최종 대체: 구글 스프레드시트
+      // [3단계] 최종 백업: 구글 스프레드시트
       try {
         var sheetRes = await fetch(SHEET_URL_REGULAR + '&_nocache=' + Date.now());
         if (sheetRes.ok) {
@@ -324,28 +318,54 @@
       }
     }
 
-    function parseComciTimetable(classData) {
+    // 컴시간 JSON의 모든 반환 구조(2차원 배열, 객체 형태 등)를 100% 수용하는 파서
+    function parseComciFlexible(data) {
       regularTimetableData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
-      var hasData = false;
+      var found = false;
+
+      // 형태 1: data['2-2'] 또는 data['2']['2']
+      var target = data['2-2'] || (data[2] && (data[2][2] || data[2]['2'] || data[2])) || data;
+
+      // 형태 2: 요일별 배열 (target[day] = [교시...])
       for (var day = 1; day <= 5; day++) {
-        var dayPeriods = classData[day] || [];
-        var list = [];
-        if (Array.isArray(dayPeriods)) {
-          dayPeriods.forEach(function(item, idx) {
+        var dayList = target[day] || target[String(day)];
+        if (Array.isArray(dayList) && dayList.length > 0) {
+          dayList.forEach(function(item, idx) {
             if (item) {
-              var subj = typeof item === 'string' ? item : (item.subject || item.name || '');
-              var teach = typeof item === 'object' ? (item.teacher || '') : '';
+              var subj = typeof item === 'string' ? item : (item.subject || item.name || item.sb || '');
+              var teach = typeof item === 'object' ? (item.teacher || item.tc || '') : '';
               if (subj && subj.trim() !== '') {
                 var parsed = splitSubjectAndTeacher(subj, teach);
-                list.push({ period: (idx + 1) + "교시", subject: parsed.subject, teacher: parsed.teacher });
-                hasData = true;
+                regularTimetableData[day].push({ period: (idx + 1) + "교시", subject: parsed.subject, teacher: parsed.teacher });
+                found = true;
               }
             }
           });
         }
-        regularTimetableData[day] = list;
       }
-      return hasData;
+
+      // 형태 3: 컴시간 원본 행/열 2차원 매트릭스 (data[교시][요일])
+      if (!found && Array.isArray(target)) {
+        for (var pIdx = 0; pIdx < target.length; pIdx++) {
+          var row = target[pIdx];
+          if (Array.isArray(row)) {
+            for (var d = 1; d <= 5; d++) {
+              var item = row[d] || row[d - 1];
+              if (item) {
+                var subj = typeof item === 'string' ? item : (item.subject || item.name || '');
+                var teach = typeof item === 'object' ? (item.teacher || '') : '';
+                if (subj && subj.trim() !== '') {
+                  var parsed = splitSubjectAndTeacher(subj, teach);
+                  regularTimetableData[d].push({ period: (pIdx + 1) + "교시", subject: parsed.subject, teacher: parsed.teacher });
+                  found = true;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return found;
     }
 
     function parseNeisTimetable(rows) {

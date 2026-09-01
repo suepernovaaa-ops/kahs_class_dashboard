@@ -252,27 +252,32 @@
       return Math.min(5, Math.max(1, Math.ceil(day / 7)));
     }
 
-    // 1순위 컴시간알리미 -> 2순위 나이스 -> 3순위 구글시트
+    // 1순위 컴시간알리미 다중 로컬 엔드포인트 탐색
     async function loadRegularTimetable() {
       var badge = document.getElementById('timetable-source-badge');
       var statusBadge = document.getElementById('server-status-badge');
 
-      // [1단계] 실행 중인 로컬 app.exe(컴시간 백엔드) 최우선 조회
-      try {
-        var res = await fetch('http://localhost:5000/api/timetable', { signal: AbortSignal.timeout(3000) });
-        if (res.ok) {
-          var data = await res.json();
-          var class22 = data['2-2'] || (data[2] && (data[2][2] || data[2])) || data;
-          if (class22 && parseComciTimetable(class22)) {
-            badge.innerText = "컴시간알리미 연동";
-            badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
-            statusBadge.innerText = "컴시간 라이브";
-            renderCurrentDay();
-            return;
+      var comciEndpoints = [
+        'http://localhost:5000/api/timetable',
+        'http://127.0.0.1:5000/api/timetable',
+        '/api/timetable'
+      ];
+
+      for (var i = 0; i < comciEndpoints.length; i++) {
+        try {
+          var res = await fetch(comciEndpoints[i] + '?_t=' + Date.now(), { signal: AbortSignal.timeout(2000) });
+          if (res.ok) {
+            var data = await res.json();
+            var class22 = data['2-2'] || (data[2] && (data[2][2] || data[2])) || data;
+            if (class22 && parseComciTimetable(class22)) {
+              badge.innerText = "컴시간알리미 연동";
+              badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
+              statusBadge.innerText = "컴시간 라이브";
+              renderCurrentDay();
+              return;
+            }
           }
-        }
-      } catch (e) {
-        console.log("로컬 컴시간 서버 미응답, 나이스로 전환 시도");
+        } catch (e) {}
       }
 
       // [2단계] 교육부 나이스(NEIS) API 조회

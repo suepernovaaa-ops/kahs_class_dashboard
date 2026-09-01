@@ -1,115 +1,162 @@
 import base64
 import json
-import re
+import os
+import sys
+import threading
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify
 from flask_cors import CORS
+from PIL import Image, ImageDraw
+import pystray
+from pystray import MenuItem as item
 import requests
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# 1. 교내 서버 IP
-LOCAL_SERVER_IPS = ["http://10.65.10.72:8080", "http://10.65.10.72"]
-
-# 2. 학교 고유 코드 (한국항공고등학교)
-SCHOOL_NAME = "한국항공고등학교"
-
-
-def parse_school_table(html_text):
-  """교내 일과서버 HTML에서 2-2반 시간표 추출"""
-  soup = BeautifulSoup(html_text, "html.parser")
-  result = {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
-  found = False
-
-  for table in soup.find_all("table"):
-    rows = table.find_all("tr")
-    for r_idx, row in enumerate(rows):
-      text = row.get_text(strip=True)
-      if "2-2" in text or "2학년 2반" in text:
-        for p in range(1, 8):
-          if r_idx + p < len(rows):
-            cols = [
-                c.get_text(strip=True) for c in rows[r_idx + p].find_all("td")
-            ]
-            if len(cols) >= 5:
-              for d in range(1, 6):
-                val = cols[d - 1] if len(cols) == 5 else cols[d]
-                if val:
-                  result[d].append({"period": p, "subject": val, "teacher": ""})
-                  found = True
-        break
-    if found:
-      break
-  return result if found else None
+# 학교 고유 코드 및 설정
+SCHOOL_CODE = "21011"
+TARGET_GRADE = 2  # 2학년
+TARGET_CLASS = 2  # 2반
 
 
-def fetch_from_comci_central():
-  """컴시간 본사 중앙 서버(comci.kr) 직접 조회"""
+def fetch_from_comci_online():
+  """컴시간 본사 중앙 온라인 서버(comci.kr) 학교코드 21011 전용 파서"""
+  headers = {
+      "User-Agent": (
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      ),
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  }
+
   try:
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        )
-    }
-    # 컴시간 학교 검색 및 시간표 데이터 패킷 요청
-    search_url = (
-        "http://comci.kr:4082/38574?48197l"
-        + base64.b64encode(SCHOOL_NAME.encode("euc-kr")).decode("utf-8")
-    )
-    res = requests.get(search_url, headers=headers, timeout=2.0)
+    # 1. 컴시간 고유 번호 요청 (74729_학교코드 또는 기본 패킷)
+    url = f"http://comci.kr:4082/74729_{SCHOOL_CODE}"
+    res = requests.get(url, headers=headers, timeout=2.5)
+
+    if res.status_code != 200:
+      # 보조 엔드포인트 시도
+      url = f"http://comci.kr:4082/38574?74729_{SCHOOL_CODE}"
+      res = requests.get(url, headers=headers, timeout=2.5)
+
     if res.status_code == 200:
-      # 컴시간 패킷 복호화 및 2-2반 추출 로직
       raw_text = res.text.strip().replace("\x00", "")
-      if "{" in raw_text:
-        json_data = json.loads(raw_text[raw_text.find("{") : raw_text.rfind("}") + 1])
-        # 2학년 2반 데이터 매핑
-        return json_data
-  except Exception:
-    pass
+      start_idx = raw_text.find("{")
+      end_idx = raw_text.rfind("}")
+
+      if start_idx != -1 and end_idx != -1:
+        json_str = raw_text[start_idx : end_idx + 1]
+        data = json.loads(json_str)
+
+        # 과목명 및 교사명 테이블 추출
+        subjects = data.get("과목명", []) or data.get("sb", [])
+        teachers = data.get("성명", []) or data.get("tc", [])
+        timetable = data.get("자료481", []) or data.get("자료482", []) or data.get("시간표", [])
+
+        # 2학년 2반 데이터 추출
+        # 컴시간 구조: timetable[학년][반][요일][교시]
+        result = {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
+        found = False
+
+        if timetable and len(timetable) > TARGET_GRADE:
+          grade_data = timetable[TARGET_GRADE]
+          if len(grade_data) > TARGET_CLASS:
+            class_data = grade_data[TARGET_CLASS]
+
+            for day_idx in range(1, 6):  # 1(월) ~ 5(금)
+              if day_idx < len(class_data):
+                day_periods = class_data[day_idx]
+                for p_idx, code in enumerate(day_periods):
+                  if p_idx == 0:
+                    continue  # 0번 인덱스 제외 (1교시부터)
+                  if p_idx > 7:
+                    break
+
+                  if isinstance(code, int) and code > 0:
+                    subj_code = code // 1000 if code >= 1000 else code % 100
+                    teach_code = code % 1000 if code >= 1000 else code // 100
+
+                    subj_name = (
+                        subjects[subj_code] if subj_code < len(subjects) else ""
+                    )
+                    teach_name = (
+                        teachers[teach_code]
+                        if teach_code < len(teachers)
+                        else ""
+                    )
+
+                    if subj_name:
+                      result[day_idx].append({
+                          "period": p_idx,
+                          "subject": subj_name,
+                          "teacher": teach_name,
+                      })
+                      found = True
+                  elif isinstance(code, str) and code.strip():
+                    result[day_idx].append(
+                        {"period": p_idx, "subject": code.strip(), "teacher": ""}
+                    )
+                    found = True
+
+        if found:
+          return result
+  except Exception as e:
+    print(f"[컴시간 수신 에러] {e}")
+
   return None
 
 
 @app.route("/api/timetable", methods=["GET"])
 def get_timetable():
-  headers = {
-      "User-Agent": (
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-      )
-  }
+  # [1순위] 학교코드 21011 기반 컴시간 온라인 서버 조회
+  online_data = fetch_from_comci_online()
+  if online_data:
+    return jsonify({
+        "success": True,
+        "source": "comci_online",
+        "code": SCHOOL_CODE,
+        "data": online_data,
+    })
 
-  # [1순위] 교내 컴시간 서버(10.65.10.72) 조회
-  for base_url in LOCAL_SERVER_IPS:
-    for path in ["", "/", "/일과진행/자료/시간표.htm", "/자료/시간표.htm"]:
-      try:
-        res = requests.get(f"{base_url}{path}", headers=headers, timeout=1.0)
-        if res.status_code == 200:
-          res.encoding = (
-              res.apparent_encoding if res.apparent_encoding else "euc-kr"
-          )
-          parsed = parse_school_table(res.text)
-          if parsed:
-            return jsonify({
-                "success": True,
-                "source": "comci_local",
-                "server": "10.65.10.72",
-                "data": parsed,
-            })
-      except Exception:
-        continue
-
-  # [2순위] 컴시간 중앙 서버(comci.kr) 조회
-  central_data = fetch_from_comci_central()
-  if central_data:
-    return jsonify(
-        {"success": True, "source": "comci_central", "data": central_data}
-    )
-
-  # [3순위] 컴시간 연결 실패 시 NEIS로 폴백
+  # [2순위] 컴시간 실패 시 NEIS로 전환
   return jsonify(
       {"success": False, "source": "fallback", "message": "NEIS 전환 필요"}
   )
 
 
+# --- 트레이 아이콘 그래픽 생성 (비행기 모양) ---
+def create_image():
+  width = 64
+  height = 64
+  image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+  dc = ImageDraw.Draw(image)
+  dc.ellipse((4, 4, 60, 60), fill=(2, 132, 199, 255))
+  dc.polygon([(32, 14), (46, 48), (32, 40), (18, 48)], fill=(255, 255, 255, 255))
+  return image
+
+
+def run_flask():
+  app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+
+
+def quit_app(icon, item):
+  icon.stop()
+  os._exit(0)
+
+
 if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=5000, debug=False)
+  flask_thread = threading.Thread(target=run_flask, daemon=True)
+  flask_thread.start()
+
+  menu = pystray.Menu(
+      item("한국항공고 2-2 대시보드 서버 (실행 중)", lambda: None, enabled=False),
+      item("종료", quit_app),
+  )
+
+  icon = pystray.Icon(
+      "KAHS_Dashboard",
+      create_image(),
+      "한국항공고 2-2 컴시간 백엔드",
+      menu,
+  )
+  icon.run()

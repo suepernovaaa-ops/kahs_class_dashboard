@@ -176,7 +176,7 @@
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
       <h3 id="modal-title" class="text-2xl font-black text-white mb-2">교무실 긴급 전달사항</h3>
-      <p id="modal-message" class="text-slate-200 text-base leading-relaxed mb-6 font-medium">전달 내용</p>
+      <p id="modal-message" class="text-slate-200 text-base leading-relaxed mb-6 font-medium whitespace-pre-line">전달 내용</p>
       <button onclick="dismissAlert()" class="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl w-full transition shadow-lg">확인 완료</button>
     </div>
   </div>
@@ -207,7 +207,6 @@
       CLASS_NM: "2"
     };
 
-    // 요일별 식단 데이터
     var WEEKLY_MEALS = {
       1: {
         breakfast: "친환경쌀밥, 쇠고기미역국, 계란말이, 오이도라지생채, 배추김치",
@@ -246,6 +245,7 @@
 
     var regularTimetableData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
     var rawAfterschoolCSV = null;
+    var lastDismissedAlertText = ""; // 확인 완료된 알림 저장 변수
 
     var SCHEDULE_PERIODS = [
       { name: "아침 조례", start: "08:40", end: "08:50", type: "homeroom" },
@@ -285,12 +285,60 @@
       return Math.min(5, Math.max(1, Math.ceil(day / 7)));
     }
 
-    // 식단 렌더링 함수
     function renderMeals(dayIndex) {
       var meals = WEEKLY_MEALS[dayIndex] || { breakfast: "-", lunch: "-", dinner: "-" };
       document.getElementById('meal-breakfast').innerText = meals.breakfast;
       document.getElementById('meal-lunch').innerText = meals.lunch;
       document.getElementById('meal-dinner').innerText = meals.dinner;
+    }
+
+    // ==========================================
+    // 알림 메시지 실시간 폴링 (alram2622 시트 파싱 보정)
+    // ==========================================
+    async function pollGoogleSheetAlerts() {
+      try {
+        var res = await fetch(SHEET_URL_ALERT + '&_nocache=' + Date.now());
+        if (res.ok) {
+          var text = await res.text();
+          var rows = parseCSV(text);
+
+          // 2행(Index 1) 확인: [0]=TRUE/FALSE, [1]=제목, [2]=내용
+          if (rows.length >= 2) {
+            var activeVal = (rows[1][0] || '').trim().toUpperCase();
+            var isActive = (activeVal === 'TRUE' || activeVal === '1' || activeVal === 'Y');
+            var title = rows[1][1] || '교무실 긴급 전달사항';
+            var message = rows[1][2] || '';
+            var alertKey = title + '::' + message;
+
+            var modal = document.getElementById('urgent-modal');
+            if (isActive && message.trim() !== '') {
+              // 확인 완료를 눌렀던 내용과 다른 새 알림이거나 시트에서 다시 TRUE로 켠 경우 표시
+              if (lastDismissedAlertText !== alertKey) {
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-message').innerText = message;
+                modal.classList.remove('hidden');
+              }
+            } else {
+              modal.classList.add('hidden');
+              lastDismissedAlertText = ''; // FALSE로 꺼지면 초기화하여 다음 알림 대비
+            }
+          }
+        }
+      } catch (e) {
+        console.error("알림 확인 오류:", e);
+      }
+      setTimeout(pollGoogleSheetAlerts, 5000); // 5초 주기 폴링
+    }
+
+    async function dismissAlert() {
+      var title = document.getElementById('modal-title').innerText;
+      var message = document.getElementById('modal-message').innerText;
+      lastDismissedAlertText = title + '::' + message; // 현재 알림 기억
+      document.getElementById('urgent-modal').classList.add('hidden');
+
+      try {
+        await fetch(GOOGLE_SCRIPT_WEBAPP_URL + '?action=dismiss&_t=' + Date.now(), { method: 'GET', mode: 'no-cors' });
+      } catch (e) {}
     }
 
     async function loadRegularTimetable() {
@@ -625,7 +673,6 @@
     }
 
     function renderCurrentDay() {
-      // 1. 정규 수업 렌더링
       var regularList = regularTimetableData[selectedDay] || [];
       var regContainer = document.getElementById('regular-timetable-list');
       regContainer.innerHTML = '';
@@ -650,7 +697,6 @@
         });
       }
 
-      // 2. 방과후 수업 렌더링
       var afterList = getAfterschoolList(selectedDay);
       var afterContainer = document.getElementById('afterschool-timetable-list');
       afterContainer.innerHTML = '';
@@ -671,9 +717,7 @@
         });
       }
 
-      // 3. 식단 렌더링 (선택된 요일 식단 즉시 반영)
       renderMeals(selectedDay);
-
       updateHighlight();
     }
 
@@ -751,44 +795,12 @@
       }
     }
 
-    async function pollGoogleSheetAlerts() {
-      try {
-        var res = await fetch(SHEET_URL_ALERT + '&_nocache=' + Date.now());
-        if (res.ok) {
-          var text = await res.text();
-          var rows = text.trim().split(/\r?\n/).map(function(r) { return r.split(',').map(function(c) { return c.replace(/^"|"$/g, '').trim(); }); });
-          if (rows.length >= 2) {
-            var isActive = rows[1][0] && rows[1][0].toUpperCase() === 'TRUE';
-            var title = rows[1][1] || '교무실 긴급 전달사항';
-            var message = rows[1][2] || '';
-
-            var modal = document.getElementById('urgent-modal');
-            if (isActive && message) {
-              document.getElementById('modal-title').innerText = title;
-              document.getElementById('modal-message').innerText = message;
-              modal.classList.remove('hidden');
-            } else {
-              modal.classList.add('hidden');
-            }
-          }
-        }
-      } catch (e) {}
-      setTimeout(pollGoogleSheetAlerts, 3000);
-    }
-
-    async function dismissAlert() {
-      document.getElementById('urgent-modal').classList.add('hidden');
-      try {
-        await fetch(GOOGLE_SCRIPT_WEBAPP_URL + '?action=dismiss&_t=' + Date.now(), { method: 'GET', mode: 'no-cors' });
-      } catch (e) {}
-    }
-
     async function fetchNotices() {
       try {
         var res = await fetch(SHEET_URL_NOTICES + '&_nocache=' + Date.now());
         if (res.ok) {
           var text = await res.text();
-          var rows = text.trim().split(/\r?\n/).map(function(r) { return r.split(',').map(function(c) { return c.replace(/^"|"$/g, '').trim(); }); });
+          var rows = parseCSV(text);
           var container = document.getElementById('notice-container');
           if (rows.length > 1) {
             container.innerHTML = '';
@@ -816,7 +828,7 @@
         var res = await fetch(SHEET_URL_DDAYS + '&_nocache=' + Date.now());
         if (res.ok) {
           var text = await res.text();
-          var rows = text.trim().split(/\r?\n/).map(function(r) { return r.split(',').map(function(c) { return c.replace(/^"|"$/g, '').trim(); }); });
+          var rows = parseCSV(text);
           var container = document.getElementById('dday-container');
           if (rows.length > 1) {
             container.innerHTML = '';

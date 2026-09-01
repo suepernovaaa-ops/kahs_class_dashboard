@@ -12,7 +12,6 @@
     body { background-color: #0b1120; color: #f8fafc; }
     .glass-card { background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); }
     .active-period { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.15); }
-    .badge-comci { background: #0284c7; color: white; }
     .badge-neis { background: #059669; color: white; }
     .badge-sheet { background: #d97706; color: white; }
   </style>
@@ -31,7 +30,7 @@
           <span class="px-2.5 py-0.5 text-xs font-bold bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 라이브
           </span>
-          <span id="server-status-badge" class="px-2.5 py-0.5 text-xs font-bold badge-sheet rounded-full">클라우드 모드</span>
+          <span id="server-status-badge" class="px-2.5 py-0.5 text-xs font-bold badge-sheet rounded-full">클라우드 연동</span>
         </div>
         <p class="text-sm text-slate-400 font-medium mt-1">창공을 향한 비상, 대한민국 최고의 항공기술 인재!</p>
       </div>
@@ -47,9 +46,7 @@
         <div id="date-display" class="text-xs text-slate-400 font-medium">2026.09.01 (화)요일</div>
       </div>
       <div class="flex items-center gap-2 text-slate-400">
-        <button id="alert-bell-btn" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition border border-slate-700 text-slate-300"><i class="fa-solid fa-bell"></i></button>
-        <button onclick="toggleMute()" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition border border-slate-700 text-slate-300"><i class="fa-solid fa-volume-high"></i></button>
-        <button onclick="toggleFullScreen()" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition border border-slate-700 text-slate-300"><i class="fa-solid fa-expand"></i></button>
+        <button onclick="toggleFullScreen()" title="전체화면" class="p-3 bg-slate-800/80 hover:bg-slate-700 rounded-xl transition border border-slate-700 text-slate-300"><i class="fa-solid fa-expand"></i></button>
       </div>
     </div>
   </header>
@@ -65,7 +62,7 @@
       </div>
     </div>
 
-    <!-- 요일 선택 탭 버튼군 -->
+    <!-- 요일 선택 탭 -->
     <div class="flex items-center gap-2 text-xs font-bold">
       <span class="text-slate-400 mr-1"><i class="fa-solid fa-calendar-check mr-1 text-sky-400"></i>요일선택:</span>
       <button onclick="changeDay(1)" id="day-btn-1" class="px-3 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition">월</button>
@@ -76,7 +73,7 @@
     </div>
   </div>
 
-  <!-- 3. 메인 콘텐츠 그리드 (3단 레이아웃) -->
+  <!-- 3. 메인 콘텐츠 그리드 -->
   <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
     
     <!-- 정규 수업 (5 cols) -->
@@ -87,9 +84,7 @@
             <i class="fa-solid fa-calendar-days text-sky-400"></i>
             <h2 class="text-lg font-bold text-white"><span id="viewing-day-label">오늘</span> 정규 수업</h2>
           </div>
-          <div class="flex items-center gap-2">
-            <span id="timetable-source-badge" class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">구글시트</span>
-          </div>
+          <span class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">기본 시간표</span>
         </div>
         <div id="regular-timetable-list" class="space-y-1.5 text-sm"></div>
       </div>
@@ -142,28 +137,34 @@
 
   </main>
 
-  <!-- 4. 하단 공지사항 & D-Day -->
+  <!-- 4. 하단 구글시트 연동 공지사항 & D-Day (클린 뷰) -->
   <footer class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+    <!-- 학급 공지사항 -->
     <div class="lg:col-span-7 glass-card rounded-2xl p-5 shadow-xl">
       <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-700/60">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-bullhorn text-sky-400"></i>
           <h2 class="text-base font-bold text-white">학급 공지사항</h2>
         </div>
-        <button onclick="addNoticePrompt()" class="text-xs px-2.5 py-1 bg-sky-600 hover:bg-sky-500 rounded font-bold text-white transition">+ 등록</button>
+        <span class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">구글시트(notices)</span>
       </div>
-      <div id="notice-container" class="space-y-2 text-sm text-slate-300"></div>
+      <div id="notice-container" class="space-y-2 text-sm text-slate-300">
+        <div class="text-slate-500 text-xs py-2">공지사항을 불러오는 중...</div>
+      </div>
     </div>
 
+    <!-- 주요 일정 (D-Day) -->
     <div class="lg:col-span-5 glass-card rounded-2xl p-5 shadow-xl">
       <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-700/60">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-flag-checkered text-amber-400"></i>
           <h2 class="text-base font-bold text-white">주요 일정 (D-Day)</h2>
         </div>
-        <button onclick="addDDayPrompt()" class="text-xs px-2.5 py-1 bg-amber-600 hover:bg-amber-500 rounded font-bold text-white transition">+ 일정 추가</button>
+        <span class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">구글시트(ddays)</span>
       </div>
-      <div id="dday-container" class="space-y-2 text-sm"></div>
+      <div id="dday-container" class="space-y-2 text-sm">
+        <div class="text-slate-500 text-xs py-2">일정을 불러오는 중...</div>
+      </div>
     </div>
   </footer>
 
@@ -180,11 +181,13 @@
   </div>
 
   <script>
-    // 1. 구글 스프레드시트 CSV 조회 URL
+    // 1. 구글 스프레드시트 탭별 CSV 조회 주소
     const GOOGLE_SHEET_ID = '1Yn5KllO-wCu3eKRfTNaI-EzUl1b29pDXsgLQ03BrzAw';
-    const GOOGLE_SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=alram2622`;
-
-    // 2. 구글 앱스 스크립트 웹앱 URL (active -> FALSE 전환용)
+    const SHEET_URL_ALERT = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=alram2622`;
+    const SHEET_URL_NOTICES = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=notices`;
+    const SHEET_URL_DDAYS = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=ddays`;
+    
+    // 2. 구글 앱스 스크립트 웹앱 주소 (확인완료 시 FALSE 자동 변경)
     const GOOGLE_SCRIPT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxJHhYmFDi74UzAau_xuQBtCy6XNFghHmCWIYV134_ToJhCkL9v53VN3gJNZxAS2peN/exec';
 
     let selectedDay = new Date().getDay();
@@ -434,10 +437,10 @@
       }
     }
 
-    // 구글 시트 긴급 알림 실시간 폴링 (3초 주기)
+    // 1. 긴급 알림 폴링 (alram2622 탭)
     async function pollGoogleSheetAlerts() {
       try {
-        const res = await fetch(`${GOOGLE_SHEET_CSV_URL}&_nocache=${Date.now()}`);
+        const res = await fetch(`${SHEET_URL_ALERT}&_nocache=${Date.now()}`);
         if (res.ok) {
           const text = await res.text();
           const rows = text.trim().split(/\r?\n/).map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
@@ -458,12 +461,104 @@
           }
         }
       } catch (e) {
-        console.error("구글 시트 연동 에러:", e);
+        console.error("알림 확인 에러:", e);
       }
       setTimeout(pollGoogleSheetAlerts, 3000);
     }
 
-    // [확인 완료] 클릭 시: 화면 닫기 + 구글 시트 active -> FALSE 자동 변경 요청
+    // 2. 공지사항 불러오기 (notices 탭: type, content 2열 구조)
+    async function fetchNotices() {
+      try {
+        const res = await fetch(`${SHEET_URL_NOTICES}&_nocache=${Date.now()}`);
+        if (res.ok) {
+          const text = await res.text();
+          const rows = text.trim().split(/\r?\n/).map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+          const container = document.getElementById('notice-container');
+          
+          if (rows.length > 1) {
+            container.innerHTML = '';
+            for (let i = 1; i < rows.length; i++) {
+              const type = rows[i][0] || '일반';
+              const content = rows[i][1] || '';
+              
+              if (content) {
+                const isImportant = type.includes('중요');
+                const badgeClass = isImportant 
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' 
+                  : 'bg-sky-500/20 text-sky-300 border-sky-500/30';
+                const cardClass = isImportant 
+                  ? 'p-2.5 rounded-xl bg-rose-950/20 flex items-center border border-rose-500/30 shadow-sm' 
+                  : 'p-2.5 rounded-xl bg-slate-800/40 flex items-center border border-slate-700/30';
+
+                const div = document.createElement('div');
+                div.className = cardClass;
+                div.innerHTML = `
+                  <div class="flex items-center gap-2.5">
+                    <span class="px-2 py-0.5 text-xs font-black rounded border ${badgeClass}">
+                      ${isImportant ? '🚨 중요' : '📌 일반'}
+                    </span>
+                    <span class="text-slate-200 font-medium">${content}</span>
+                  </div>
+                `;
+                container.appendChild(div);
+              }
+            }
+          } else {
+            container.innerHTML = '<div class="text-slate-500 text-xs py-2">등록된 공지사항이 없습니다.</div>';
+          }
+        }
+      } catch (e) {
+        console.error("공지사항 불러오기 실패:", e);
+      }
+      setTimeout(fetchNotices, 15000);
+    }
+
+    // 3. 주요 일정 D-Day 불러오기 (ddays 탭: title, date 2열 구조)
+    async function fetchDDays() {
+      try {
+        const res = await fetch(`${SHEET_URL_DDAYS}&_nocache=${Date.now()}`);
+        if (res.ok) {
+          const text = await res.text();
+          const rows = text.trim().split(/\r?\n/).map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+          const container = document.getElementById('dday-container');
+          
+          if (rows.length > 1) {
+            container.innerHTML = '';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            for (let i = 1; i < rows.length; i++) {
+              const title = rows[i][0];
+              const dateStr = rows[i][1];
+              if (title && dateStr) {
+                const target = new Date(dateStr);
+                target.setHours(0,0,0,0);
+                const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+                const ddayText = diffDays === 0 ? 'D-Day' : (diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`);
+
+                const div = document.createElement('div');
+                div.className = "p-2.5 rounded-xl bg-slate-800/40 flex justify-between items-center border border-slate-700/30";
+                div.innerHTML = `
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 text-xs font-black rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">${ddayText}</span>
+                    <span class="font-semibold text-slate-200">${title}</span>
+                  </div>
+                  <span class="text-xs text-slate-400 font-medium">${dateStr}</span>
+                `;
+                container.appendChild(div);
+              }
+            }
+          } else {
+            container.innerHTML = '<div class="text-slate-500 text-xs py-2">등록된 일정이 없습니다.</div>';
+          }
+        }
+      } catch (e) {
+        console.error("D-Day 불러오기 실패:", e);
+      }
+      setTimeout(fetchDDays, 60000);
+    }
+
+    // [확인 완료] 클릭 시 구글 시트 active=FALSE 자동 전환
     async function dismissAlert() {
       document.getElementById('urgent-modal').classList.add('hidden');
       try {
@@ -471,84 +566,9 @@
           method: 'GET',
           mode: 'no-cors'
         });
-        console.log("구글 시트 active 상태가 FALSE로 자동 변경되었습니다.");
       } catch (e) {
         console.error("시트 자동 업데이트 실패:", e);
       }
-    }
-
-    function loadNotices() {
-      const list = JSON.parse(localStorage.getItem('kahs_notices') || '["2학년 2반 자율적인 운영과 역동적인 자치 실천", "실습실 이동 시 안전모 및 실습복 착용 필수"]');
-      const container = document.getElementById('notice-container');
-      container.innerHTML = '';
-      list.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = "p-2.5 rounded-xl bg-slate-800/40 flex justify-between items-center border border-slate-700/30";
-        div.innerHTML = `<span>📌 ${item}</span><button onclick="removeNotice(${idx})" class="text-xs text-slate-500 hover:text-red-400 ml-2">삭제</button>`;
-        container.appendChild(div);
-      });
-    }
-
-    function addNoticePrompt() {
-      const text = prompt("새 공지사항을 입력하세요:");
-      if (text && text.trim()) {
-        const list = JSON.parse(localStorage.getItem('kahs_notices') || '[]');
-        list.push(text.trim());
-        localStorage.setItem('kahs_notices', JSON.stringify(list));
-        loadNotices();
-      }
-    }
-
-    function removeNotice(idx) {
-      const list = JSON.parse(localStorage.getItem('kahs_notices') || '[]');
-      list.splice(idx, 1);
-      localStorage.setItem('kahs_notices', JSON.stringify(list));
-      loadNotices();
-    }
-
-    function loadDDays() {
-      const list = JSON.parse(localStorage.getItem('kahs_ddays') || '[{"title":"2학기 1차 지필평가","date":"2026-10-15"}]');
-      const container = document.getElementById('dday-container');
-      container.innerHTML = '';
-      const today = new Date();
-      today.setHours(0,0,0,0);
-
-      list.forEach((item, idx) => {
-        const target = new Date(item.date);
-        target.setHours(0,0,0,0);
-        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-        const ddayText = diffDays === 0 ? 'D-Day' : (diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`);
-
-        const div = document.createElement('div');
-        div.className = "p-2.5 rounded-xl bg-slate-800/40 flex justify-between items-center border border-slate-700/30";
-        div.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 text-xs font-black rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">${ddayText}</span>
-            <span class="font-semibold text-slate-200">${item.title}</span>
-          </div>
-          <button onclick="removeDDay(${idx})" class="text-xs text-slate-500 hover:text-red-400">삭제</button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function addDDayPrompt() {
-      const title = prompt("일정 명칭을 입력하세요 (예: 2학기 중간고사):");
-      if (!title) return;
-      const date = prompt("날짜를 입력하세요 (YYYY-MM-DD 형식):", "2026-10-15");
-      if (title && date) {
-        const list = JSON.parse(localStorage.getItem('kahs_ddays') || '[]');
-        list.push({ title, date });
-        localStorage.setItem('kahs_ddays', JSON.stringify(list));
-        loadDDays();
-      }
-    }
-
-    function removeDDay(idx) {
-      const list = JSON.parse(localStorage.getItem('kahs_ddays') || '[]');
-      list.splice(idx, 1);
-      localStorage.setItem('kahs_ddays', JSON.stringify(list));
-      loadDDays();
     }
 
     function toggleFullScreen() {
@@ -559,17 +579,13 @@
       }
     }
 
-    function toggleMute() {
-      alert("알림 음소거 상태가 설정되었습니다.");
-    }
-
     window.onload = () => {
       changeDay(selectedDay);
-      loadNotices();
-      loadDDays();
       updateClockAndStatus();
       setInterval(updateClockAndStatus, 1000);
       pollGoogleSheetAlerts();
+      fetchNotices();
+      fetchDDays();
     };
   </script>
 </body>

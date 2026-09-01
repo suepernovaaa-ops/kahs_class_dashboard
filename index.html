@@ -230,6 +230,26 @@
       { name: "11교시", start: "20:10", end: "21:00", period: 11 }
     ];
 
+    // 텍스트에서 과목명과 담당 교사를 깔끔하게 분리하는 헬퍼 함수
+    function splitSubjectAndTeacher(rawText, fallbackTeacher) {
+      if (!rawText) return { subject: '', teacher: '' };
+      var text = rawText.trim();
+      
+      // 공백으로 분리된 경우 (예: "세척(실) 임형찬", "항공기일반 이현규")
+      var parts = text.split(/\s+/);
+      if (parts.length >= 2) {
+        var teacher = parts.pop();
+        var subject = parts.join(' ');
+        if (!teacher.endsWith('선생님')) {
+          teacher += ' 선생님';
+        }
+        return { subject: subject, teacher: teacher };
+      }
+      
+      var teacherStr = fallbackTeacher ? (fallbackTeacher.endsWith('선생님') ? fallbackTeacher : fallbackTeacher + ' 선생님') : '';
+      return { subject: text, teacher: teacherStr };
+    }
+
     function getWeekOfMonth(date) {
       var d = new Date(date);
       var day = d.getDate();
@@ -302,7 +322,8 @@
         var list = [];
         dayPeriods.forEach(function(item, idx) {
           if (item && item.subject && item.subject.trim() !== '') {
-            list.push({ period: (idx + 1) + "교시", subject: item.subject.trim(), teacher: item.teacher || '' });
+            var parsed = splitSubjectAndTeacher(item.subject, item.teacher);
+            list.push({ period: (idx + 1) + "교시", subject: parsed.subject, teacher: parsed.teacher });
           }
         });
         regularTimetableData[day] = list;
@@ -320,10 +341,10 @@
           var dateObj = new Date(year, month, day);
           var dayIndex = dateObj.getDay();
           var period = parseInt(r.ITRT_CNT);
-          var subject = r.ITRT_CNT_NM.trim();
+          var parsed = splitSubjectAndTeacher(r.ITRT_CNT_NM, '');
 
-          if (dayIndex >= 1 && dayIndex <= 5 && subject) {
-            regularTimetableData[dayIndex].push({ period: period + "교시", subject: subject, teacher: '' });
+          if (dayIndex >= 1 && dayIndex <= 5 && parsed.subject) {
+            regularTimetableData[dayIndex].push({ period: period + "교시", subject: parsed.subject, teacher: parsed.teacher });
           }
         }
       });
@@ -354,7 +375,8 @@
             for (var d = 1; d <= 5; d++) {
               var val = rows[rIdx][d] ? rows[rIdx][d].trim() : '';
               if (val && val !== '') {
-                regularTimetableData[d].push({ period: p + "교시", subject: val, teacher: '' });
+                var parsed = splitSubjectAndTeacher(val, '');
+                regularTimetableData[d].push({ period: p + "교시", subject: parsed.subject, teacher: parsed.teacher });
               }
             }
           }
@@ -368,7 +390,8 @@
                 for (var d = 1; d <= 5; d++) {
                   var val = rows[r + p][d] ? rows[r + p][d].trim() : '';
                   if (val && val !== '') {
-                    regularTimetableData[d].push({ period: p + "교시", subject: val, teacher: '' });
+                    var parsed = splitSubjectAndTeacher(val, '');
+                    regularTimetableData[d].push({ period: p + "교시", subject: parsed.subject, teacher: parsed.teacher });
                   }
                 }
               }
@@ -436,10 +459,13 @@
         if (!cell6 || cell6.trim() === '') {
           return [{ period: "방과후", subject: "수업 없음", teacher: "" }];
         } else {
+          var p6 = splitSubjectAndTeacher(cell6);
+          var p7 = splitSubjectAndTeacher(getCellValue(rows, friRows[1], col) || cell6);
+          var p8 = splitSubjectAndTeacher(getCellValue(rows, friRows[2], col) || cell6);
           return [
-            { period: "6교시", subject: cell6, teacher: "" },
-            { period: "7교시", subject: getCellValue(rows, friRows[1], col) || cell6, teacher: "" },
-            { period: "8교시", subject: getCellValue(rows, friRows[2], col) || cell6, teacher: "" }
+            { period: "6교시", subject: p6.subject, teacher: p6.teacher },
+            { period: "7교시", subject: p7.subject, teacher: p7.teacher },
+            { period: "8교시", subject: p8.subject, teacher: p8.teacher }
           ];
         }
       }
@@ -454,11 +480,17 @@
           var list = [];
           wMap.sat1.forEach(function(rIdx, idx) {
             var val = getCellValue(rows, rIdx, col);
-            if (val && val.trim() !== '') list.push({ period: (idx + 1) + "교시(오전)", subject: val, teacher: "" });
+            if (val && val.trim() !== '') {
+              var parsed = splitSubjectAndTeacher(val);
+              list.push({ period: (idx + 1) + "교시(오전)", subject: parsed.subject, teacher: parsed.teacher });
+            }
           });
           wMap.sat2.forEach(function(rIdx, idx) {
             var val = getCellValue(rows, rIdx, col);
-            if (val && val.trim() !== '') list.push({ period: (idx + 5) + "교시(오후)", subject: val, teacher: "" });
+            if (val && val.trim() !== '') {
+              var parsed = splitSubjectAndTeacher(val);
+              list.push({ period: (idx + 5) + "교시(오후)", subject: parsed.subject, teacher: parsed.teacher });
+            }
           });
           return list;
         }
@@ -472,7 +504,8 @@
         var rIdx = wMap[p];
         var val = getCellValue(rows, rIdx, colIdx);
         if (val && val.trim() !== '') {
-          list.push({ period: p + "교시", subject: val.trim(), teacher: "" });
+          var parsed = splitSubjectAndTeacher(val);
+          list.push({ period: p + "교시", subject: parsed.subject, teacher: parsed.teacher });
         }
       });
       return list;
@@ -507,9 +540,8 @@
       renderCurrentDay();
     }
 
-    // 첫 번째 이미지 UI 디자인 규격 100% 동일 렌더링
+    // 두 번째 사진의 3단 분리 디자인 적용 (교시(노랑) / 과목(흰색) / 선생님(회색))
     function renderCurrentDay() {
-      // 1. 정규 수업 목록 렌더링 (3단 그리드: 교시(노랑) / 과목(흰색) / 교사(회색))
       var regularList = regularTimetableData[selectedDay] || [];
       var regContainer = document.getElementById('regular-timetable-list');
       regContainer.innerHTML = '';
@@ -525,8 +557,8 @@
           row.id = 'period-row-' + pNum;
           row.className = "px-5 py-3 rounded-xl bg-slate-800/60 flex justify-between items-center border border-slate-700/50 shadow-sm transition";
           row.innerHTML = 
-            '<div class="flex items-center gap-4 flex-grow">' +
-              '<span class="w-16 text-amber-400 font-black text-base tracking-tight text-left">' + item.period + '</span>' +
+            '<div class="flex items-center gap-6 flex-grow">' +
+              '<span class="w-16 text-amber-400 font-black text-base tracking-tight text-left shrink-0">' + item.period + '</span>' +
               '<span class="text-white font-bold text-base tracking-wide">' + item.subject + '</span>' +
             '</div>' +
             '<span class="text-slate-400 text-sm font-medium text-right shrink-0">' + (item.teacher || '') + '</span>';
@@ -534,7 +566,6 @@
         });
       }
 
-      // 2. 방과후 수업 목록 렌더링 (3단 그리드 동일 적용)
       var afterList = getAfterschoolList(selectedDay);
       var afterContainer = document.getElementById('afterschool-timetable-list');
       afterContainer.innerHTML = '';
@@ -546,8 +577,8 @@
           var div = document.createElement('div');
           div.className = "px-5 py-3 rounded-xl bg-slate-800/60 flex justify-between items-center border border-slate-700/50 shadow-sm transition";
           div.innerHTML = 
-            '<div class="flex items-center gap-4 flex-grow">' +
-              '<span class="w-20 text-amber-400 font-black text-base tracking-tight text-left">' + item.period + '</span>' +
+            '<div class="flex items-center gap-6 flex-grow">' +
+              '<span class="w-16 text-amber-400 font-black text-base tracking-tight text-left shrink-0">' + item.period + '</span>' +
               '<span class="text-white font-bold text-base tracking-wide">' + item.subject + '</span>' +
             '</div>' +
             '<span class="text-slate-400 text-sm font-medium text-right shrink-0">' + (item.teacher || '') + '</span>';

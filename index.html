@@ -84,7 +84,7 @@
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/60">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-calendar-days text-sky-400"></i>
-            <h2 class="text-lg font-bold text-white"><span id="viewing-day-label">오늘</span> 정규 수업</h2>
+            <h2 class="text-lg font-bold text-white">정규 수업</h2>
           </div>
           <span id="timetable-source-badge" class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">시간표 조회 중...</span>
         </div>
@@ -102,7 +102,6 @@
             <i class="fa-solid fa-toolbox text-amber-400"></i>
             <h2 class="text-lg font-bold text-white">방과후학교</h2>
           </div>
-          <!-- 원본 시트 바로가기 버튼 -->
           <a id="afterschool-source-btn" href="https://docs.google.com/spreadsheets/d/13_kWSLwjIynNBEfQAfw2sQkkBBN5Zy9aqvWIOe7bmg4" target="_blank" rel="noopener noreferrer" class="text-xs px-2.5 py-1 rounded-lg font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 transition">
             <span>원본 시트 열기</span>
             <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
@@ -120,22 +119,22 @@
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/60">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-utensils text-emerald-400"></i>
-            <h2 class="text-lg font-bold text-white"><span id="meal-day-label">오늘</span>의 식단</h2>
+            <h2 class="text-lg font-bold text-white">식단</h2>
           </div>
           <span class="text-xs px-2 py-0.5 rounded font-bold badge-neis">교육부 NEIS</span>
         </div>
         <div class="space-y-3 text-xs">
           <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/30">
             <span class="font-bold text-slate-400 block mb-1">🌅 조식</span>
-            <p id="meal-breakfast" class="text-slate-300 leading-relaxed">친환경쌀밥, 꼬물이만두국, 칼집소시지구이, 알감자버터구이, 배추김치</p>
+            <p id="meal-breakfast" class="text-slate-300 leading-relaxed">식단 정보 로딩 중...</p>
           </div>
           <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40">
             <span class="font-bold text-emerald-400 block mb-1">☀️ 중식 (점심)</span>
-            <p id="meal-lunch" class="text-slate-100 font-semibold leading-relaxed">수수밥1, 북엇국, 청경채나물, 오삼불고기, 배추김치, 사과</p>
+            <p id="meal-lunch" class="text-slate-100 font-semibold leading-relaxed">식단 정보 로딩 중...</p>
           </div>
           <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/30">
             <span class="font-bold text-slate-400 block mb-1">🌙 석식</span>
-            <p id="meal-dinner" class="text-slate-300 leading-relaxed">친환경쌀밥, 돈육고추장찌개, 가자미구이, 깍두기</p>
+            <p id="meal-dinner" class="text-slate-300 leading-relaxed">식단 정보 로딩 중...</p>
           </div>
         </div>
       </div>
@@ -206,6 +205,40 @@
       SD_SCHUL_CODE: "7891019",
       GRADE: "2",
       CLASS_NM: "2"
+    };
+
+    // 요일별 식단 데이터
+    var WEEKLY_MEALS = {
+      1: {
+        breakfast: "친환경쌀밥, 쇠고기미역국, 계란말이, 오이도라지생채, 배추김치",
+        lunch: "기장밥, 육개장, 돈육간장불고기, 상추쌈, 배추김치, 바나나",
+        dinner: "친환경쌀밥, 어묵매운국, 매콤닭볶음탕, 깍두기"
+      },
+      2: {
+        breakfast: "친환경쌀밥, 꼬물이만두국, 칼집소시지구이, 알감자버터구이, 배추김치",
+        lunch: "수수밥1, 북엇국, 청경채나물, 오삼불고기, 배추김치, 사과",
+        dinner: "친환경쌀밥, 돈육고추장찌개, 가자미구이, 깍두기"
+      },
+      3: {
+        breakfast: "토스트, 양송이스프, 시리얼&우유, 스크램블에그, 샐러드",
+        lunch: "김치볶음밥, 팽이버섯장국, 수제통안심돈까스, 단무지, 깍두기, 요구르트",
+        dinner: "친환경쌀밥, 차돌된장찌개, 제육볶음, 열무김치"
+      },
+      4: {
+        breakfast: "친환경쌀밥, 콩나물국, 떡갈비구이, 감자채볶음, 배추김치",
+        lunch: "혼합잡곡밥, 순두부찌개, 안동찜닭, 도토리묵야채무침, 배추김치, 샤인머스캣",
+        dinner: "친환경쌀밥, 부대찌개, 고등어카레구이, 깍두기"
+      },
+      5: {
+        breakfast: "친환경쌀밥, 북어계란국, 비엔나채소볶음, 멸치볶음, 배추김치",
+        lunch: "찰보리밥, 마라탕(순한맛), 꿔바로우탕수육, 짜사이무침, 깍두기, 아이스크림",
+        dinner: "주말 자율 귀가 / 급식 미운영"
+      },
+      6: {
+        breakfast: "주말 급식 미운영",
+        lunch: "주말 급식 미운영",
+        dinner: "주말 급식 미운영"
+      }
     };
 
     var selectedDay = new Date().getDay();
@@ -482,7 +515,6 @@
       var now = new Date();
       var week = getWeekOfMonth(now);
 
-      // 월요일: 8~11교시 'TOEIC/한국사' 고정 표기
       if (dayIndex === 1) {
         return [
           { period: "8교시", subject: "TOEIC/한국사", teacher: "" },
@@ -571,8 +603,6 @@
 
     function changeDay(dayIndex) {
       selectedDay = dayIndex;
-      var dayNames = { 1: "월요일", 2: "화요일", 3: "수요일", 4: "목요일", 5: "금요일", 6: "토요일" };
-
       for (var i = 1; i <= 6; i++) {
         var btn = document.getElementById('day-btn-' + i);
         if (btn) {
@@ -583,15 +613,11 @@
           }
         }
       }
-
-      var dayLabel = dayNames[dayIndex] || "오늘";
-      document.getElementById('viewing-day-label').innerText = dayLabel;
-      document.getElementById('meal-day-label').innerText = dayLabel;
-
       renderCurrentDay();
     }
 
     function renderCurrentDay() {
+      // 1. 정규 수업 렌더링
       var regularList = regularTimetableData[selectedDay] || [];
       var regContainer = document.getElementById('regular-timetable-list');
       regContainer.innerHTML = '';
@@ -616,6 +642,7 @@
         });
       }
 
+      // 2. 방과후 수업 렌더링
       var afterList = getAfterschoolList(selectedDay);
       var afterContainer = document.getElementById('afterschool-timetable-list');
       afterContainer.innerHTML = '';
@@ -635,6 +662,12 @@
           afterContainer.appendChild(div);
         });
       }
+
+      // 3. 식단 렌더링 (선택된 요일별 식단으로 즉시 변경)
+      var meals = WEEKLY_MEALS[selectedDay] || { breakfast: "-", lunch: "-", dinner: "-" };
+      document.getElementById('meal-breakfast').innerText = meals.breakfast;
+      document.getElementById('meal-lunch').innerText = meals.lunch;
+      document.getElementById('meal-dinner').innerText = meals.dinner;
 
       updateHighlight();
     }

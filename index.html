@@ -31,7 +31,7 @@
           <span class="px-2.5 py-0.5 text-xs font-bold bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 flex items-center gap-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 라이브
           </span>
-          <span id="server-status-badge" class="px-2.5 py-0.5 text-xs font-bold badge-sheet rounded-full">클라우드 모드</span>
+          <span id="server-status-badge" class="px-2.5 py-0.5 text-xs font-bold badge-sheet rounded-full">컴시간 확인 중...</span>
         </div>
         <p class="text-sm text-slate-400 font-medium mt-1">창공을 향한 비상, 대한민국 최고의 항공기술 인재!</p>
       </div>
@@ -86,7 +86,7 @@
             <i class="fa-solid fa-calendar-days text-sky-400"></i>
             <h2 class="text-lg font-bold text-white"><span id="viewing-day-label">오늘</span> 정규 수업</h2>
           </div>
-          <span id="timetable-source-badge" class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">실제 데이터 연동</span>
+          <span id="timetable-source-badge" class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">시간표 조회 중...</span>
         </div>
         <div id="regular-timetable-list" class="space-y-2.5">
           <div class="text-slate-500 text-xs py-8 text-center">시간표 데이터를 불러오는 중...</div>
@@ -230,12 +230,9 @@
       { name: "11교시", start: "20:10", end: "21:00", period: 11 }
     ];
 
-    // 텍스트에서 과목명과 담당 교사를 깔끔하게 분리하는 헬퍼 함수
     function splitSubjectAndTeacher(rawText, fallbackTeacher) {
       if (!rawText) return { subject: '', teacher: '' };
-      var text = rawText.trim();
-      
-      // 공백으로 분리된 경우 (예: "세척(실) 임형찬", "항공기일반 이현규")
+      var text = String(rawText).trim();
       var parts = text.split(/\s+/);
       if (parts.length >= 2) {
         var teacher = parts.pop();
@@ -245,7 +242,6 @@
         }
         return { subject: subject, teacher: teacher };
       }
-      
       var teacherStr = fallbackTeacher ? (fallbackTeacher.endsWith('선생님') ? fallbackTeacher : fallbackTeacher + ' 선생님') : '';
       return { subject: text, teacher: teacherStr };
     }
@@ -256,25 +252,30 @@
       return Math.min(5, Math.max(1, Math.ceil(day / 7)));
     }
 
+    // 1순위 컴시간알리미 -> 2순위 나이스 -> 3순위 구글시트
     async function loadRegularTimetable() {
       var badge = document.getElementById('timetable-source-badge');
+      var statusBadge = document.getElementById('server-status-badge');
 
-      if (window.location.protocol === 'http:' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        try {
-          var res = await fetch('http://localhost:5000/api/timetable', { signal: AbortSignal.timeout(600) });
-          if (res.ok) {
-            var data = await res.json();
-            if (data && (data[2] || data['2-2'])) {
-              parseComciTimetable(data[2] || data['2-2']);
-              badge.innerText = "컴시간알리미 연동";
-              badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
-              renderCurrentDay();
-              return;
-            }
+      // [1단계] 실행 중인 로컬 app.exe(컴시간 백엔드) 최우선 조회
+      try {
+        var res = await fetch('http://localhost:5000/api/timetable', { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          var data = await res.json();
+          var class22 = data['2-2'] || (data[2] && (data[2][2] || data[2])) || data;
+          if (class22 && parseComciTimetable(class22)) {
+            badge.innerText = "컴시간알리미 연동";
+            badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
+            statusBadge.innerText = "컴시간 라이브";
+            renderCurrentDay();
+            return;
           }
-        } catch (e) {}
+        }
+      } catch (e) {
+        console.log("로컬 컴시간 서버 미응답, 나이스로 전환 시도");
       }
 
+      // [2단계] 교육부 나이스(NEIS) API 조회
       try {
         var now = new Date();
         var monday = new Date(now);
@@ -288,19 +289,21 @@
 
         var neisUrl = 'https://open.neis.go.kr/hub/hisTimetable?Type=json&ATPT_OFCDC_SC_CODE=' + NEIS_CONFIG.ATPT_OFCDC_SC_CODE + '&SD_SCHUL_CODE=' + NEIS_CONFIG.SD_SCHUL_CODE + '&AY=' + now.getFullYear() + '&SEM=2&GRADE=' + NEIS_CONFIG.GRADE + '&CLASS_NM=' + NEIS_CONFIG.CLASS_NM + '&TI_FROM_YMD=' + fromYmd + '&TI_TO_YMD=' + toYmd;
 
-        var neisRes = await fetch(neisUrl, { signal: AbortSignal.timeout(1200) });
+        var neisRes = await fetch(neisUrl, { signal: AbortSignal.timeout(1500) });
         if (neisRes.ok) {
           var json = await neisRes.json();
           if (json.hisTimetable && json.hisTimetable[1] && json.hisTimetable[1].row) {
             parseNeisTimetable(json.hisTimetable[1].row);
             badge.innerText = "교육부 NEIS 연동";
             badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-neis";
+            statusBadge.innerText = "나이스 클라우드";
             renderCurrentDay();
             return;
           }
         }
       } catch (e) {}
 
+      // [3단계] 최종 대체: 구글 스프레드시트
       try {
         var sheetRes = await fetch(SHEET_URL_REGULAR + '&_nocache=' + Date.now());
         if (sheetRes.ok) {
@@ -308,26 +311,36 @@
           parseRegularSheet(text);
           badge.innerText = "정규시간표 시트 연동";
           badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-sheet";
+          statusBadge.innerText = "구글 시트 모드";
           renderCurrentDay();
         }
       } catch (e) {
-        console.error("정규시간표 구글시트 로드 실패:", e);
+        console.error("정규시간표 로드 실패:", e);
       }
     }
 
     function parseComciTimetable(classData) {
       regularTimetableData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+      var hasData = false;
       for (var day = 1; day <= 5; day++) {
         var dayPeriods = classData[day] || [];
         var list = [];
-        dayPeriods.forEach(function(item, idx) {
-          if (item && item.subject && item.subject.trim() !== '') {
-            var parsed = splitSubjectAndTeacher(item.subject, item.teacher);
-            list.push({ period: (idx + 1) + "교시", subject: parsed.subject, teacher: parsed.teacher });
-          }
-        });
+        if (Array.isArray(dayPeriods)) {
+          dayPeriods.forEach(function(item, idx) {
+            if (item) {
+              var subj = typeof item === 'string' ? item : (item.subject || item.name || '');
+              var teach = typeof item === 'object' ? (item.teacher || '') : '';
+              if (subj && subj.trim() !== '') {
+                var parsed = splitSubjectAndTeacher(subj, teach);
+                list.push({ period: (idx + 1) + "교시", subject: parsed.subject, teacher: parsed.teacher });
+                hasData = true;
+              }
+            }
+          });
+        }
         regularTimetableData[day] = list;
       }
+      return hasData;
     }
 
     function parseNeisTimetable(rows) {
@@ -349,9 +362,7 @@
         }
       });
       for (var d = 1; d <= 5; d++) {
-        regularTimetableData[d].sort(function(a, b) { 
-          return parseInt(a.period) - parseInt(b.period); 
-        });
+        regularTimetableData[d].sort(function(a, b) { return parseInt(a.period) - parseInt(b.period); });
       }
     }
 
@@ -540,7 +551,6 @@
       renderCurrentDay();
     }
 
-    // 두 번째 사진의 3단 분리 디자인 적용 (교시(노랑) / 과목(흰색) / 선생님(회색))
     function renderCurrentDay() {
       var regularList = regularTimetableData[selectedDay] || [];
       var regContainer = document.getElementById('regular-timetable-list');

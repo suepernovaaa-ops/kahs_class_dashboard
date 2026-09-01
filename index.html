@@ -86,7 +86,8 @@
             <i class="fa-solid fa-calendar-days text-sky-400"></i>
             <h2 class="text-lg font-bold text-white">정규 수업</h2>
           </div>
-          <span id="timetable-source-badge" class="text-xs px-2 py-0.5 rounded font-bold badge-sheet">시간표 조회 중...</span>
+          <!-- 소스 표기 배지: 컴시간알리미 / NEIS / 저장된 데이터 -->
+          <span id="timetable-source-badge" class="text-xs px-2.5 py-0.5 rounded font-bold badge-sheet">조회 중...</span>
         </div>
         <div id="regular-timetable-list" class="space-y-2.5">
           <div class="text-slate-500 text-xs py-8 text-center">시간표 데이터를 불러오는 중...</div>
@@ -121,7 +122,7 @@
             <i class="fa-solid fa-utensils text-emerald-400"></i>
             <h2 class="text-lg font-bold text-white">식단</h2>
           </div>
-          <span class="text-xs px-2 py-0.5 rounded font-bold badge-neis">교육부 NEIS</span>
+          <span class="text-xs px-2 py-0.5 rounded font-bold badge-neis">NEIS</span>
         </div>
         <div class="space-y-3 text-xs">
           <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/30">
@@ -245,7 +246,7 @@
 
     var regularTimetableData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
     var rawAfterschoolCSV = null;
-    var lastDismissedAlertText = ""; // 확인 완료된 알림 저장 변수
+    var lastDismissedAlertText = "";
 
     var SCHEDULE_PERIODS = [
       { name: "아침 조례", start: "08:40", end: "08:50", type: "homeroom" },
@@ -292,9 +293,6 @@
       document.getElementById('meal-dinner').innerText = meals.dinner;
     }
 
-    // ==========================================
-    // 알림 메시지 실시간 폴링 (alram2622 시트 파싱 보정)
-    // ==========================================
     async function pollGoogleSheetAlerts() {
       try {
         var res = await fetch(SHEET_URL_ALERT + '&_nocache=' + Date.now());
@@ -302,7 +300,6 @@
           var text = await res.text();
           var rows = parseCSV(text);
 
-          // 2행(Index 1) 확인: [0]=TRUE/FALSE, [1]=제목, [2]=내용
           if (rows.length >= 2) {
             var activeVal = (rows[1][0] || '').trim().toUpperCase();
             var isActive = (activeVal === 'TRUE' || activeVal === '1' || activeVal === 'Y');
@@ -312,7 +309,6 @@
 
             var modal = document.getElementById('urgent-modal');
             if (isActive && message.trim() !== '') {
-              // 확인 완료를 눌렀던 내용과 다른 새 알림이거나 시트에서 다시 TRUE로 켠 경우 표시
               if (lastDismissedAlertText !== alertKey) {
                 document.getElementById('modal-title').innerText = title;
                 document.getElementById('modal-message').innerText = message;
@@ -320,20 +316,18 @@
               }
             } else {
               modal.classList.add('hidden');
-              lastDismissedAlertText = ''; // FALSE로 꺼지면 초기화하여 다음 알림 대비
+              lastDismissedAlertText = '';
             }
           }
         }
-      } catch (e) {
-        console.error("알림 확인 오류:", e);
-      }
-      setTimeout(pollGoogleSheetAlerts, 5000); // 5초 주기 폴링
+      } catch (e) {}
+      setTimeout(pollGoogleSheetAlerts, 5000);
     }
 
     async function dismissAlert() {
       var title = document.getElementById('modal-title').innerText;
       var message = document.getElementById('modal-message').innerText;
-      lastDismissedAlertText = title + '::' + message; // 현재 알림 기억
+      lastDismissedAlertText = title + '::' + message;
       document.getElementById('urgent-modal').classList.add('hidden');
 
       try {
@@ -341,10 +335,12 @@
       } catch (e) {}
     }
 
+    // 정규 수업 시간표 3단계 연동 및 배지 명칭 표기
     async function loadRegularTimetable() {
       var badge = document.getElementById('timetable-source-badge');
       var statusBadge = document.getElementById('server-status-badge');
 
+      // [1순위] 컴시간알리미 로컬 엔드포인트 탐색
       var comciUrls = [
         'http://localhost:5000/api/timetable',
         'http://127.0.0.1:5000/api/timetable',
@@ -361,8 +357,8 @@
           if (res.ok) {
             var rawData = await res.json();
             if (parseComciFlexible(rawData)) {
-              badge.innerText = "컴시간알리미 연동";
-              badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-comci";
+              badge.innerText = "컴시간알리미";
+              badge.className = "text-xs px-2.5 py-0.5 rounded font-bold badge-comci";
               statusBadge.innerText = "컴시간 라이브";
               renderCurrentDay();
               return;
@@ -371,6 +367,7 @@
         } catch (e) {}
       }
 
+      // [2순위] 교육부 NEIS API 조회
       try {
         var now = new Date();
         var monday = new Date(now);
@@ -389,8 +386,8 @@
           var json = await neisRes.json();
           if (json.hisTimetable && json.hisTimetable[1] && json.hisTimetable[1].row) {
             parseNeisTimetable(json.hisTimetable[1].row);
-            badge.innerText = "교육부 NEIS 연동";
-            badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-neis";
+            badge.innerText = "NEIS";
+            badge.className = "text-xs px-2.5 py-0.5 rounded font-bold badge-neis";
             statusBadge.innerText = "나이스 클라우드";
             renderCurrentDay();
             return;
@@ -398,13 +395,14 @@
         }
       } catch (e) {}
 
+      // [3순위] 최종 백업: 구글 스프레드시트 (저장된 데이터)
       try {
         var sheetRes = await fetch(SHEET_URL_REGULAR + '&_nocache=' + Date.now());
         if (sheetRes.ok) {
           var text = await sheetRes.text();
           parseRegularSheet(text);
-          badge.innerText = "정규시간표 시트 연동";
-          badge.className = "text-xs px-2 py-0.5 rounded font-bold badge-sheet";
+          badge.innerText = "저장된 데이터";
+          badge.className = "text-xs px-2.5 py-0.5 rounded font-bold badge-sheet";
           statusBadge.innerText = "구글 시트 모드";
           renderCurrentDay();
         }
@@ -673,6 +671,7 @@
     }
 
     function renderCurrentDay() {
+      // 1. 정규 수업 렌더링
       var regularList = regularTimetableData[selectedDay] || [];
       var regContainer = document.getElementById('regular-timetable-list');
       regContainer.innerHTML = '';
@@ -697,6 +696,7 @@
         });
       }
 
+      // 2. 방과후 수업 렌더링
       var afterList = getAfterschoolList(selectedDay);
       var afterContainer = document.getElementById('afterschool-timetable-list');
       afterContainer.innerHTML = '';
@@ -717,7 +717,9 @@
         });
       }
 
+      // 3. 식단 렌더링
       renderMeals(selectedDay);
+
       updateHighlight();
     }
 
@@ -811,7 +813,7 @@
                 var isImportant = type.includes('중요');
                 var badgeClass = isImportant ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/20 text-sky-300 border-sky-500/30';
                 var cardClass = isImportant ? 'p-2.5 rounded-xl bg-rose-950/20 flex items-center border border-rose-500/30 shadow-sm' : 'p-2.5 rounded-xl bg-slate-800/40 flex items-center border border-slate-700/30';
-                var div = document.createElement('div');
+                div = document.createElement('div');
                 div.className = cardClass;
                 div.innerHTML = '<div class="flex items-center gap-2.5"><span class="px-2 py-0.5 text-xs font-black rounded border ' + badgeClass + '">' + (isImportant ? '🚨 중요' : '📌 일반') + '</span><span class="text-slate-200 font-medium">' + content + '</span></div>';
                 container.appendChild(div);

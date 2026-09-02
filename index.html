@@ -384,7 +384,6 @@
       return { subject: text, teacher: '' };
     }
 
-    // 3. 정규 시간표 로더 (NEIS 삭제, 컴시간 -> 시트 2단계 적용)
     async function loadRegularTimetable() {
       const badge = document.getElementById('timetable-source-badge');
       if (badge) {
@@ -399,27 +398,24 @@
           const json = await res.json();
           if (json.success && json.timetable) {
             regularTimetableData = json.timetable;
-            
-            // 포맷 적용 (선생님 호칭 자동 부착)
             for (let day in regularTimetableData) {
               regularTimetableData[day].forEach(item => {
                 item.teacher = formatTeacher(item.teacher);
               });
             }
-            
             if (badge) {
               badge.innerText = "컴시간알리미";
               badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30";
             }
             renderTimetables();
-            return; // 컴시간 성공 시 여기서 멈춤
+            return;
           }
         }
       } catch (e) {
-        console.warn("컴시간 서버 통신 실패, 시트로 넘어갑니다.");
+        console.warn("컴시간 연동 실패, 저장된 시트로 전환합니다.");
       }
       
-      // 2순위: 구글 시트 백업본 (JSON 파싱 방식으로 변경)
+      // 2순위: 구글 시트 백업본 (초강력 파싱 적용)
       try {
         const sheetId = '1yfOSkEkHqoWG2bRLj10Wd0ns9M_Rs8n9KxP7VNthyto';
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&_nocache=${Date.now()}`;
@@ -433,71 +429,109 @@
             const data = JSON.parse(jsonMatch[1]);
             const rows = data.table.rows;
             
-            let headerRowIdx = -1;
-            let colMap = {};
+            let tempData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
+            tempData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
             
-            // 헤더 탐색 (월, 화가 있는 줄 찾기)
-            for (let i = 0; i < rows.length; i++) {
+            let hasSheetData = false;
+            let colMap = null;
+            let startRow = -1;
+
+            // 1단계: 요일 헤더(월,화,수) 문자열 탐색 (최대 5번째 줄까지만)
+            for (let i = 0; i < Math.min(rows.length, 5); i++) {
               if (!rows[i] || !rows[i].c) continue;
-              let cellValues = rows[i].c.map(cell => cell && cell.v ? String(cell.v).trim() : '');
-              if (cellValues.includes('월') && cellValues.includes('화')) {
-                headerRowIdx = i;
-                cellValues.forEach((val, idx) => {
-                  if (['월', '화', '수', '목', '금'].includes(val)) {
-                    colMap[val] = idx;
-                  }
-                });
+              let tempMap = {};
+              let count = 0;
+              rows[i].c.forEach((cell, idx) => {
+                if (cell && (cell.v || cell.f)) {
+                  let val = String(cell.v || cell.f).replace(/\s+/g, '');
+                  if(val.includes('월')) { tempMap['월'] = idx; count++; }
+                  else if(val.includes('화')) { tempMap['화'] = idx; count++; }
+                  else if(val.includes('수')) { tempMap['수'] = idx; count++; }
+                  else if(val.includes('목')) { tempMap['목'] = idx; count++; }
+                  else if(val.includes('금')) { tempMap['금'] = idx; count++; }
+                }
+              });
+              
+              if (count >= 3) { // 3개 이상의 요일을 찾으면 헤더 위치 확정
+                colMap = tempMap;
+                startRow = i + 1; // 헤더 다음 줄부터 데이터 시작
                 break;
               }
             }
-            
-            if (headerRowIdx !== -1) {
-              let tempData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
-              tempData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
+
+            // 2단계: 헤더를 못 찾았을 경우, 흔한 패턴인 B열(1) ~ F열(5) 강제 지정
+            if (!colMap || startRow === -1) {
+               colMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5 };
+               startRow = 1; // 두 번째 줄(index 1)부터 시작한다고 가정
+            }
+
+            // 데이터 추출 (1~7교시)
+            for (let p = 1; p <= 7; p++) {
+              let rIdx = startRow + (p - 1);
               
-              let hasSheetData = false;
-              
-              for (let p = 1; p <= 7; p++) {
-                let rIdx = headerRowIdx + p;
-                ['월', '화', '수', '목', '금'].forEach(day => {
-                  let cIdx = colMap[day];
-                  let rawVal = "";
-                  // 빈칸이나 줄바꿈이 있어도 안전하게 읽어옴
-                  if (rIdx < rows.length && rows[rIdx] && rows[rIdx].c && cIdx !== undefined && rows[rIdx].c[cIdx]) {
-                    rawVal = String(rows[rIdx].c[cIdx].v || '').trim();
-                  }
-                  if (rawVal && rawVal !== 'null' && rawVal !== '-') {
-                    let parsed = splitSubjectAndTeacher(rawVal);
-                    tempData[day].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
-                    hasSheetData = true;
-                  } else {
-                    tempData[day].push({ period: p, subject: '자율', teacher: '' });
-                  }
-                });
-              }
-              
-              if (hasSheetData) {
-                regularTimetableData = tempData;
-                if (badge) {
-                  badge.innerText = "저장된 시간표";
-                  badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+              ['월', '화', '수', '목', '금'].forEach(day => {
+                let cIdx = colMap[day];
+                let rawVal = "";
+                
+                if (rIdx < rows.length && rows[rIdx] && rows[rIdx].c && rows[rIdx].c[cIdx]) {
+                  let cell = rows[rIdx].c[cIdx];
+                  rawVal = String(cell.v || cell.f || '').trim();
                 }
-                renderTimetables();
-                return; 
+                
+                if (rawVal && rawVal !== 'null' && rawVal !== '-' && rawVal !== '자율') {
+                  let parsed = splitSubjectAndTeacher(rawVal);
+                  tempData[day].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
+                  hasSheetData = true; // 유효한 텍스트 하나라도 발견 시 성공
+                } else {
+                  tempData[day].push({ period: p, subject: '자율', teacher: '' });
+                }
+              });
+            }
+            
+            // 3단계: B~F열을 다 뒤졌는데도 데이터가 텅 비었다면, A열(0) ~ E열(4) 위치로 재시도
+            if (!hasSheetData) {
+               colMap = { '월': 0, '화': 1, '수': 2, '목': 3, '금': 4 };
+               for (let p = 1; p <= 7; p++) {
+                 let rIdx = startRow + (p - 1);
+                 ['월', '화', '수', '목', '금'].forEach(day => {
+                   let cIdx = colMap[day];
+                   let rawVal = "";
+                   if (rIdx < rows.length && rows[rIdx] && rows[rIdx].c && rows[rIdx].c[cIdx]) {
+                     let cell = rows[rIdx].c[cIdx];
+                     rawVal = String(cell.v || cell.f || '').trim();
+                   }
+                   if (rawVal && rawVal !== 'null' && rawVal !== '-' && rawVal !== '자율') {
+                     let parsed = splitSubjectAndTeacher(rawVal);
+                     tempData[day][p-1] = { period: p, subject: parsed.subject, teacher: parsed.teacher };
+                     hasSheetData = true;
+                   }
+                 });
+               }
+            }
+            
+            // 데이터가 무사히 파싱되었다면 뱃지를 띄우고 화면에 렌더링
+            if (hasSheetData) {
+              regularTimetableData = tempData;
+              if (badge) {
+                badge.innerText = "저장된 시간표";
+                badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
               }
+              renderTimetables();
+              return; // 성공 시 여기서 함수 정상 종료
             }
           }
         }
       } catch (e) {
-        console.error("구글 시트 로딩 에러:", e);
+        console.error("구글 시트 연동 중 에러 발생:", e);
       }
       
-      // 모두 실패 시 기본 구조 생성 및 빨간 뱃지 표시
+      // 모든 방법이 실패했을 경우에만 '연결 실패' 빨간 뱃지 표시
       if (badge) {
         badge.innerText = "연결 실패";
         badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
       }
       
+      // 기본 백지 상태(자율) 데이터 투입
       if (!regularTimetableData['월'] || regularTimetableData['월'].length === 0) {
         regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
         for(let d of ['월','화','수','목','금']) {

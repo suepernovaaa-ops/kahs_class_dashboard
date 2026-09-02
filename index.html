@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts (Pretendard & JetBrains Mono) -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -20,10 +20,6 @@
           fontFamily: {
             sans: ['Pretendard', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            skyDark: '#0B132B',
-            panelBg: 'rgba(26, 38, 57, 0.75)',
           }
         }
       }
@@ -125,10 +121,6 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button onclick="openAlertHistoryModal()" id="alert-history-btn" title="알림 내역" class="relative p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-rose-400 hover:border-rose-400/50 transition">
-          <i class="fa-solid fa-bell"></i>
-          <span id="alert-red-dot" class="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full border-2 border-slate-900 hidden animate-pulse"></span>
-        </button>
         <button onclick="toggleAudioChime()" id="chime-btn" title="수업 종소리 알림 토글" class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-amber-400 hover:border-amber-400/50 transition">
           <i class="fa-solid fa-volume-high"></i>
         </button>
@@ -166,7 +158,7 @@
     </div>
   </div>
 
-  <!-- Main Grid Layout (3 Columns) -->
+  <!-- Main Grid Layout -->
   <main class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5 flex-1">
     
     <!-- CARD 1: 정규 수업 -->
@@ -177,17 +169,14 @@
             <span>📅</span> 정규 수업
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/20 font-semibold">컴시간알리미</span>
-            <button onclick="openModal('edit-schedule-modal')" class="text-slate-400 hover:text-sky-300 text-xs p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/20 font-semibold">기본 데이터</span>
           </div>
         </div>
-
-        <div class="space-y-2 overflow-y-auto max-h-[420px] pr-1" id="regular-timetable-container">
-        </div>
+        <div class="space-y-2 overflow-y-auto max-h-[420px] pr-1" id="regular-timetable-container"></div>
       </div>
     </div>
 
-    <!-- CARD 2: 방과후학교 (불필요한 텍스트 완전 제거) -->
+    <!-- CARD 2: 방과후학교 -->
     <div class="glass-panel p-5 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/80">
@@ -198,16 +187,13 @@
             <a href="https://docs.google.com/spreadsheets/u/0/d/13_kWSLwjIynNBEfQAfw2sQkkBBN5Zy9aqvWIOe7bmg4/htmlview#gid=1068456315" target="_blank" class="text-[11px] px-2 py-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 font-semibold transition flex items-center gap-1">
               <span>구글 시트 원문 보기</span> <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
             </a>
-            <button onclick="openModal('edit-schedule-modal')" title="수정" class="text-slate-400 hover:text-amber-300 text-xs p-1"><i class="fa-solid fa-pen-to-square"></i></button>
           </div>
         </div>
-
-        <div class="space-y-2.5 overflow-y-auto max-h-[420px] pr-1" id="afterschool-timetable-container">
-        </div>
+        <div class="space-y-2.5 overflow-y-auto max-h-[420px] pr-1" id="afterschool-timetable-container"></div>
       </div>
     </div>
 
-    <!-- CARD 3: 식단 (이름 변경 및 요일 연동) -->
+    <!-- CARD 3: 식단 (실시간 NEIS 연동) -->
     <div class="glass-panel p-5 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/80">
@@ -215,19 +201,16 @@
             <span>🍱</span> 식단
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">NEIS 실시간</span>
-            <button onclick="openModal('edit-meal-modal')" title="급식 수동 수정" class="text-slate-400 hover:text-emerald-300 text-xs p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">교육부 NEIS 실시간</span>
           </div>
         </div>
-
         <div class="space-y-3 overflow-y-auto max-h-[440px] pr-1" id="meals-container">
-          <!-- Rendered dynamically -->
-          <div class="text-center py-8 text-slate-500 text-xs">식단 정보를 불러오는 중...</div>
+          <div class="text-center py-10 text-slate-500 text-xs">교육부 NEIS 급식 데이터를 불러오는 중...</div>
         </div>
       </div>
 
       <div class="pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400 mt-2">
-        <span id="meal-date-display" class="font-bold text-slate-300"></span>
+        <span id="meal-date-display" class="font-bold text-slate-300">2026.00.00 (월)</span>
         <div class="flex gap-2">
           <button onclick="changeMealDate(-1)" class="p-1 hover:text-white"><i class="fa-solid fa-chevron-left"></i> 어제</button>
           <button onclick="changeMealDate(0)" class="p-1 text-emerald-400 font-bold">오늘</button>
@@ -238,7 +221,7 @@
 
   </main>
 
-  <!-- Bottom Section: 공지 사항 & 주요 일정 -->
+  <!-- Bottom Section: 공지 사항 & 주요 일정 (구글 시트 연동) -->
   <footer class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     
     <div class="glass-panel p-5 lg:col-span-2">
@@ -246,12 +229,10 @@
         <h2 class="text-base font-extrabold text-sky-300 flex items-center gap-2">
           <i class="fa-solid fa-bullhorn text-sky-400"></i> 공지 사항
         </h2>
-        <button onclick="openModal('add-notice-modal')" class="px-2.5 py-1 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 rounded-lg text-xs font-bold transition">
-          + 등록
-        </button>
+        <span class="text-[10px] text-slate-500">구글 시트 실시간 연동</span>
       </div>
-
       <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1" id="notices-list">
+        <div class="text-xs text-slate-500 text-center py-4">공지사항을 불러오는 중...</div>
       </div>
     </div>
 
@@ -260,177 +241,102 @@
         <h2 class="text-base font-extrabold text-amber-300 flex items-center gap-2">
           <i class="fa-solid fa-calendar-check text-amber-400"></i> 주요 일정
         </h2>
-        <button onclick="openModal('add-dday-modal')" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold transition">
-          + 일정 추가
-        </button>
+        <span class="text-[10px] text-slate-500">구글 시트 실시간 연동</span>
       </div>
-
       <div class="grid grid-cols-1 gap-2.5 max-h-48 overflow-y-auto pr-1" id="ddays-list">
+        <div class="text-xs text-slate-500 text-center py-4">일정을 불러오는 중...</div>
       </div>
     </div>
 
   </footer>
 
-  <!-- MODALS -->
+  <!-- 긴급 알림 모달 (구글 시트 연동) -->
   <div id="emergency-alert-modal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
-    <div class="glass-panel max-w-lg w-full p-6 border-2 border-rose-500/80 shadow-2xl shadow-rose-950/50 relative overflow-hidden">
+    <div class="glass-panel max-w-lg w-full p-6 border-2 border-rose-500/80 shadow-2xl relative overflow-hidden">
       <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-rose-500"></div>
-      
       <div class="flex justify-between items-center pb-3 border-b border-rose-900/50 mb-4">
-        <div class="flex items-center gap-2 text-rose-400 font-black text-lg tracking-tight">
-          <span class="p-1.5 bg-rose-500/20 rounded-lg border border-rose-500/40">📢</span>
-          교무실 긴급 알림
-        </div>
-        <span id="emergency-time" class="text-xs text-slate-400 font-mono">13:45</span>
+        <div class="flex items-center gap-2 text-rose-400 font-black text-lg">📢 긴급 전달사항</div>
       </div>
-
       <div class="py-4 text-center">
-        <div class="inline-block px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold mb-3" id="emergency-sender">
-          담임 선생님
-        </div>
-        <div id="emergency-content" class="text-xl font-black text-white leading-relaxed tracking-tight px-2">
-          알림 내용이 들어갑니다.
-        </div>
+        <div class="inline-block px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold mb-3" id="emergency-sender">교무실</div>
+        <div id="emergency-content" class="text-xl font-black text-white leading-relaxed px-2">알림 내용</div>
       </div>
-
       <div class="mt-6 flex justify-end">
-        <button onclick="closeModal('emergency-alert-modal')" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg transition">
-          확인하였습니다
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div id="alert-history-modal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
-    <div class="glass-panel max-w-lg w-full p-6 border border-rose-500/30">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-4">
-        <h3 class="text-lg font-bold text-rose-300 flex items-center gap-2">
-          <i class="fa-solid fa-clock-rotate-left text-rose-400"></i> 긴급 알림 히스토리
-        </h3>
-        <button onclick="closeModal('alert-history-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-
-      <div id="alert-history-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1 mb-4">
-      </div>
-
-      <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-xs text-slate-400">
-        <span>총 <strong id="alert-count" class="text-rose-400">0</strong>개의 알림</span>
-        <button onclick="clearAlertHistory()" class="text-slate-400 hover:text-rose-400 transition">
-          <i class="fa-solid fa-trash-can mr-1"></i>전체 삭제
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div id="add-notice-modal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
-    <div class="glass-panel max-w-md w-full p-6 border border-sky-500/30">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-4">
-        <h3 class="text-lg font-bold text-sky-300">새 공지사항 등록</h3>
-        <button onclick="closeModal('add-notice-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">공지 내용</label>
-          <input type="text" id="notice-text-input" placeholder="공지할 내용을 입력하세요" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white outline-none focus:border-sky-400">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">중요도</label>
-          <select id="notice-tag-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
-            <option value="일반">일반 공지</option>
-            <option value="중요">🔴 중요</option>
-            <option value="과제">📝 과제/수행평가</option>
-            <option value="준비물">🎒 준비물</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 mt-5">
-        <button onclick="closeModal('add-notice-modal')" class="px-4 py-2 bg-slate-800 rounded-lg text-sm">취소</button>
-        <button onclick="saveNotice()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 font-bold text-white rounded-lg text-sm">등록하기</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="add-dday-modal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
-    <div class="glass-panel max-w-md w-full p-6 border border-amber-500/30">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-4">
-        <h3 class="text-lg font-bold text-amber-300">주요 일정 D-Day 추가</h3>
-        <button onclick="closeModal('add-dday-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-      </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">일정 제목</label>
-          <input type="text" id="dday-title-input" placeholder="예: 항공정비기능사 실기시험" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white outline-none focus:border-amber-400">
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">목표 날짜</label>
-          <input type="date" id="dday-date-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 mt-5">
-        <button onclick="closeModal('add-dday-modal')" class="px-4 py-2 bg-slate-800 rounded-lg text-sm">취소</button>
-        <button onclick="saveDDay()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-lg text-sm">추가하기</button>
+        <button onclick="dismissAlert()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-sm transition">확인하였습니다</button>
       </div>
     </div>
   </div>
 
   <!-- JAVASCRIPT LOGIC ENGINE -->
   <script>
-    const BACKEND_SERVER_URL = "http://localhost:5000";
+    // --- 구글 시트 URL 설정 (마음에드는버전.html 기준) ---
+    const MAIN_SHEET_ID = '1Yn5KllO-wCu3eKRfTNaI-EzUl1b29pDXsgLQ03BrzAw';
+    const SHEET_URL_ALERT = `https://docs.google.com/spreadsheets/d/${MAIN_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=alram2622`;
+    const SHEET_URL_NOTICES = `https://docs.google.com/spreadsheets/d/${MAIN_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=notices`;
+    const SHEET_URL_DDAYS = `https://docs.google.com/spreadsheets/d/${MAIN_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=ddays`;
+    const GOOGLE_SCRIPT_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxJHhYmFDi74UzAau_xuQBtCy6XNFghHmCWIYV134_ToJhCkL9v53VN3gJNZxAS2peN/exec';
 
+    let lastDismissedAlertText = "";
     let audioChimeEnabled = true;
     let selectedDay = '월';
-    let currentDateForMeal = new Date(); // 현재 선택된 급식 날짜 객체
+    let currentDateForMeal = new Date();
 
-    // 로컬 스토리지 또는 기본 데이터 설정
-    let regularTimetable = JSON.parse(localStorage.getItem('hk_regular_tt')) || {
+    // 1. "선생님" 호칭 자동 추가 함수
+    function formatTeacher(name) {
+      if (!name) return '';
+      let t = name.trim();
+      if (t !== '' && !t.endsWith('선생님') && !t.endsWith('교사') && t !== '급식실' && t !== '지도교사') {
+        return t + ' 선생님';
+      }
+      return t;
+    }
+
+    // 기본 정규 시간표 (모의 데이터)
+    let regularTimetable = {
       '월': [
-        { period: 1, subject: '항공기체', teacher: '이OO 선생님' },
-        { period: 2, subject: '항공기체', teacher: '이OO 선생님' },
-        { period: 3, subject: '실용영어', teacher: '김OO 선생님' },
-        { period: 4, subject: '수학Ⅰ', teacher: '박OO 선생님' },
-        { period: 5, subject: '항공기관실습', teacher: '최OO 선생님' },
-        { period: 6, subject: '항공기관실습', teacher: '최OO 선생님' },
-        { period: 7, subject: '자율활동', teacher: '담임 선생님' }
+        { period: 1, subject: '항공기체', teacher: '이OO' },
+        { period: 2, subject: '항공기체', teacher: '이OO' },
+        { period: 3, subject: '실용영어', teacher: '김OO' },
+        { period: 4, subject: '수학Ⅰ', teacher: '박OO' },
+        { period: 5, subject: '항공기관실습', teacher: '최OO' },
+        { period: 6, subject: '항공기관실습', teacher: '최OO' },
+        { period: 7, subject: '자율활동', teacher: '담임' }
       ],
       '화': [
-        { period: 1, subject: '항공역학', teacher: '정OO 선생님' },
-        { period: 2, subject: '항공역학', teacher: '정OO 선생님' },
-        { period: 3, subject: '국어', teacher: '강OO 선생님' },
-        { period: 4, subject: '한국사', teacher: '윤OO 선생님' },
-        { period: 5, subject: '항공전기전자', teacher: '임OO 선생님' },
-        { period: 6, subject: '항공전기전자', teacher: '임OO 선생님' },
+        { period: 1, subject: '항공역학', teacher: '정OO' },
+        { period: 2, subject: '항공역학', teacher: '정OO' },
+        { period: 3, subject: '국어', teacher: '강OO' },
+        { period: 4, subject: '한국사', teacher: '윤OO' },
+        { period: 5, subject: '항공전기전자', teacher: '임OO' },
+        { period: 6, subject: '항공전기전자', teacher: '임OO' },
         { period: 7, subject: '동아리활동', teacher: '지도교사' }
       ],
       '수': [
-        { period: 1, subject: '항공기체', teacher: '이OO 선생님' },
-        { period: 2, subject: '항공기체', teacher: '이OO 선생님' },
-        { period: 3, subject: '실용영어', teacher: '김OO 선생님' },
-        { period: 4, subject: '수학Ⅰ', teacher: '박OO 선생님' },
-        { period: 5, subject: '항공기관실습', teacher: '최OO 선생님' },
-        { period: 6, subject: '항공기관실습', teacher: '최OO 선생님' },
-        { period: 7, subject: '자율활동', teacher: '담임 선생님' }
+        { period: 1, subject: '항공기체', teacher: '이OO' },
+        { period: 2, subject: '항공기체', teacher: '이OO' },
+        { period: 3, subject: '실용영어', teacher: '김OO' },
+        { period: 4, subject: '수학Ⅰ', teacher: '박OO' },
+        { period: 5, subject: '항공기관실습', teacher: '최OO' },
+        { period: 6, subject: '항공기관실습', teacher: '최OO' },
+        { period: 7, subject: '자율활동', teacher: '담임' }
       ],
       '목': [
-        { period: 1, subject: '항공기관', teacher: '최OO 선생님' },
-        { period: 2, subject: '항공기관', teacher: '최OO 선생님' },
-        { period: 3, subject: '물리학Ⅰ', teacher: '한OO 선생님' },
-        { period: 4, subject: '체육', teacher: '송OO 선생님' },
-        { period: 5, subject: '항공기체실습', teacher: '이OO 선생님' },
-        { period: 6, subject: '항공기체실습', teacher: '이OO 선생님' },
-        { period: 7, subject: '진로활동', teacher: '담임 선생님' }
+        { period: 1, subject: '항공기관', teacher: '최OO' },
+        { period: 2, subject: '항공기관', teacher: '최OO' },
+        { period: 3, subject: '물리학Ⅰ', teacher: '한OO' },
+        { period: 4, subject: '체육', teacher: '송OO' },
+        { period: 5, subject: '항공기체실습', teacher: '이OO' },
+        { period: 6, subject: '항공기체실습', teacher: '이OO' },
+        { period: 7, subject: '진로활동', teacher: '담임' }
       ],
       '금': [
-        { period: 1, subject: '수학Ⅰ', teacher: '박OO 선생님' },
-        { period: 2, subject: '실용영어', teacher: '김OO 선생님' },
-        { period: 3, subject: '항공역학', teacher: '정OO 선생님' },
-        { period: 4, subject: '국어', teacher: '강OO 선생님' },
-        { period: 5, subject: '항공시뮬레이션', teacher: '조OO 선생님' },
-        { period: 6, subject: '항공시뮬레이션', teacher: '조OO 선생님' },
-        { period: 7, subject: '학급회의', teacher: '담임 선생님' }
+        { period: 1, subject: '수학Ⅰ', teacher: '박OO' },
+        { period: 2, subject: '실용영어', teacher: '김OO' },
+        { period: 3, subject: '항공역학', teacher: '정OO' },
+        { period: 4, subject: '국어', teacher: '강OO' },
+        { period: 5, subject: '항공시뮬레이션', teacher: '조OO' },
+        { period: 6, subject: '항공시뮬레이션', teacher: '조OO' },
+        { period: 7, subject: '학급회의', teacher: '담임' }
       ],
       '토': [
         { period: 1, subject: '-', teacher: '' },
@@ -443,7 +349,7 @@
       ]
     };
 
-    let afterschoolTimetable = JSON.parse(localStorage.getItem('hk_afterschool_tt')) || {
+    let afterschoolTimetable = {
       '월': [
         { period: 8, subject: '기초교과', teacher: '' },
         { period: 9, subject: '기초교과', teacher: '' },
@@ -455,48 +361,8 @@
         { period: 9, subject: 'TOEIC/한국사', teacher: '' },
         { period: 10, subject: 'TOEIC/한국사', teacher: '' },
         { period: 11, subject: 'TOEIC/한국사', teacher: '' }
-      ],
-      '수': [
-        { period: 8, subject: '항공정비기능사 실기', teacher: '김OO 선생님' },
-        { period: 9, subject: '항공정비기능사 실기', teacher: '김OO 선생님' },
-        { period: 10, subject: '야간 전공 자율학습', teacher: '이OO 선생님' },
-        { period: 11, subject: '야간 전공 자율학습', teacher: '이OO 선생님' }
-      ],
-      '목': [
-        { period: 8, subject: '항공기체정비 실무', teacher: '박OO 선생님' },
-        { period: 9, subject: '항공기체정비 실무', teacher: '박OO 선생님' },
-        { period: 10, subject: '야간 자율학습', teacher: '담임 선생님' },
-        { period: 11, subject: '야간 자율학습', teacher: '담임 선생님' }
-      ],
-      '금': [
-        { period: 8, subject: '항공전자 자격증반', teacher: '최OO 선생님' },
-        { period: 9, subject: '항공전자 자격증반', teacher: '최OO 선생님' },
-        { period: 10, subject: '주말 대비 자율학습', teacher: '지도교사' },
-        { period: 11, subject: '주말 대비 자율학습', teacher: '지도교사' }
-      ],
-      '토': [
-        { period: 1, subject: '토요 특화 방과후 1', teacher: '지도교사' },
-        { period: 2, subject: '토요 특화 방과후 2', teacher: '지도교사' },
-        { period: 3, subject: '토요 특화 방과후 3', teacher: '지도교사' },
-        { period: 4, subject: '토요 특화 방과후 4', teacher: '지도교사' },
-        { period: 5, subject: '토요 전공 자실 1', teacher: '지도교사' },
-        { period: 6, subject: '토요 전공 자실 2', teacher: '지도교사' },
-        { period: 7, subject: '토요 전공 자실 3', teacher: '지도교사' },
-        { period: 8, subject: '토요 전공 자실 4', teacher: '지도교사' }
       ]
     };
-
-    let notices = JSON.parse(localStorage.getItem('hk_notices')) || [
-      { id: 1, text: "오늘 7교시 후 전원 교실 청소 상태 점검 진행 예정", tag: "중요" },
-      { id: 2, text: "항공정비기능사 실기접수 서류 제출 마감 (금요일까지)", tag: "과제" }
-    ];
-
-    let ddays = JSON.parse(localStorage.getItem('hk_ddays')) || [
-      { id: 1, title: "항공정비기능사 실기시험", date: "2026-09-15" },
-      { id: 2, title: "2학기 중간고사", date: "2026-10-12" }
-    ];
-
-    let alertHistory = JSON.parse(localStorage.getItem('hk_alerts')) || [];
 
     const PERIOD_TIMINGS = [
       { label: "아침 조례", start: "08:40", end: "08:50", type: "조례" },
@@ -537,16 +403,6 @@
       updateLivePeriodStatus(now);
     }
 
-    function formatTeacher(name) {
-      if (!name) return '';
-      let t = name.trim();
-      // 이름이 비어있지 않고, '선생님', '교사', '급식실'로 끝나지 않으면 ' 선생님'을 붙임
-      if (t !== '' && !t.endsWith('선생님') && !t.endsWith('교사') && t !== '급식실') {
-        return t + ' 선생님';
-      }
-      return t;
-    }
-
     function updateLivePeriodStatus(now) {
       const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const dayIdx = now.getDay();
@@ -578,13 +434,13 @@
             const pNum = parseInt(p.type);
             if (pNum <= 7) {
               const item = (regularTimetable[todayName] || []).find(i => i.period === pNum);
-              if (item) { subjectText = item.subject; teacherText = item.teacher; }
+              if (item) { subjectText = item.subject; teacherText = formatTeacher(item.teacher); }
             } else {
               const item = (afterschoolTimetable[todayName] || []).find(i => i.period === pNum);
-              if (item) { subjectText = item.subject; teacherText = item.teacher; }
+              if (item) { subjectText = item.subject; teacherText = formatTeacher(item.teacher); }
             }
           }
-          info.innerHTML = `<strong>${subjectText}</strong> ${teacherText ? `<span class="text-xs text-sky-400 font-normal ml-2">(${formatTeacher(teacherText)})</span>` : ''}`;
+          info.innerHTML = `<strong>${subjectText}</strong> ${teacherText ? `<span class="text-xs text-sky-400 font-normal ml-2">(${teacherText})</span>` : ''}`;
           break;
         }
       }
@@ -596,7 +452,6 @@
       }
     }
 
-    // 요일 변경 시 동작
     function selectDay(day) {
       selectedDay = day;
 
@@ -632,7 +487,6 @@
             <div class="p-6 text-center text-slate-400 glass-card">
               <i class="fa-solid fa-mug-hot text-2xl text-amber-400 mb-2"></i>
               <div class="font-bold text-sm text-slate-300">토요일은 정규 수업이 없습니다.</div>
-              <div class="text-xs text-slate-500 mt-1">방과후학교 1~8교시 수업을 확인하세요.</div>
             </div>
           `;
         } else {
@@ -659,6 +513,96 @@
       }
     }
 
+    // --- CSV 파싱 엔진 (구글 시트 연동용) ---
+    function parseCSV(text) {
+      let p = '', row = [''], ret = [row];
+      let i = 0, r = 0, s = true, l;
+      for (let idx = 0; idx < text.length; idx++) {
+        l = text[idx];
+        if ('"' === l) {
+          if (s && l === p) row[i] += l;
+          s = !s;
+        } else if (',' === l && s) {
+          l = row[++i] = '';
+        } else if ('\n' === l && s) {
+          if ('\r' === p) row[i] = row[i].slice(0, -1);
+          row = [l = ''];
+          ret[++r] = row;
+          i = 0;
+        } else {
+          row[i] += l;
+        }
+        p = l;
+      }
+      return ret;
+    }
+
+    // --- 방과후학교 구글 시트 파싱 ---
+    function fetchGoogleSheetsAfterschoolSchedule() {
+      const currentMonth = currentDateForMeal.getMonth() + 1;
+      const monthSheetName = `${currentMonth}월`;
+      const sheetId = '13_kWSLwjIynNBEfQAfw2sQkkBBN5Zy9aqvWIOe7bmg4';
+      const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(monthSheetName)}`;
+
+      fetch(gvizUrl)
+        .then(res => res.text())
+        .then(text => {
+          const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+          if (!jsonMatch) return;
+          const data = JSON.parse(jsonMatch[1]);
+          const rows = data.table.rows;
+
+          const dom = currentDateForMeal.getDate();
+          const weekIdx = Math.min(Math.ceil(dom / 7), 5);
+
+          const weekRowOffsets = {
+            1: [11, 13, 14, 15], 2: [27, 29, 30, 31],
+            3: [43, 45, 46, 47], 4: [59, 61, 62, 63], 5: [75, 77, 78, 79]
+          };
+
+          const targetRows = weekRowOffsets[weekIdx] || weekRowOffsets[4];
+          const dayCols = { '수': 23, '목': 32, '금': 41 };
+
+          ['수', '목', '금'].forEach(day => {
+            const colIdx = dayCols[day];
+            const daySchedule = [];
+
+            [8, 9, 10, 11].forEach((period, pIdx) => {
+              const rowIdx = targetRows[pIdx];
+              let val = "";
+              try {
+                if (rows[rowIdx] && rows[rowIdx].c && rows[rowIdx].c[colIdx]) {
+                  const cell = rows[rowIdx].c[colIdx];
+                  val = cell.f || cell.v || "";
+                }
+              } catch (e) { val = ""; }
+
+              let subject = val ? val.toString().trim() : "";
+              let teacher = "";
+
+              if (subject.includes('\n')) {
+                const parts = subject.split('\n');
+                subject = parts[0].trim();
+                teacher = parts.slice(1).join(' ').trim();
+              } else if (subject.includes('(') && subject.includes(')')) {
+                const match = subject.match(/(.*?)\((.*?)\)/);
+                if (match) {
+                  subject = match[1].trim();
+                  teacher = match[2].trim();
+                }
+              }
+
+              if (!subject) subject = "수업 없음";
+              daySchedule.push({ period, subject, teacher });
+            });
+            afterschoolTimetable[day] = daySchedule;
+          });
+          renderTimetables();
+        })
+        .catch(err => { renderTimetables(); });
+    }
+
+    // --- NEIS 실시간 급식 파싱 ---
     function fetchMealsForDate() {
       const year = currentDateForMeal.getFullYear();
       const month = String(currentDateForMeal.getMonth() + 1).padStart(2, '0');
@@ -687,7 +631,6 @@
               if (r.MMEAL_SC_CODE === '3') mealData.dinner = cleanDish;
             });
           }
-
           renderMealCardsWithTiming(mealData);
         })
         .catch(err => {
@@ -716,7 +659,6 @@
           </div>
           <p class="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">${meals.breakfast}</p>
         </div>
-
         <div class="glass-card p-3.5 border-l-4 transition-all duration-300 ${isLunchActive ? 'border-l-emerald-400 bg-emerald-950/40 border-emerald-500/30 shadow-lg ring-1 ring-emerald-500/20' : 'border-l-slate-600 opacity-85'}">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-bold ${isLunchActive ? 'text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-slate-400'}">
@@ -725,7 +667,6 @@
           </div>
           <p class="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">${meals.lunch}</p>
         </div>
-
         <div class="glass-card p-3.5 border-l-4 transition-all duration-300 ${isDinnerActive ? 'border-l-emerald-400 bg-emerald-950/40 border-emerald-500/30 shadow-lg ring-1 ring-emerald-500/20' : 'border-l-slate-600 opacity-85'}">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-bold ${isDinnerActive ? 'text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-slate-400'}">
@@ -737,135 +678,162 @@
       `;
     }
 
-    // 어제/오늘/내일 버튼 클릭 시 동작
     function changeMealDate(offset) {
-      if(offset === 0){
-          currentDateForMeal = new Date();
-      } else {
-          currentDateForMeal.setDate(currentDateForMeal.getDate() + offset);
-      }
-      
+      currentDateForMeal.setDate(currentDateForMeal.getDate() + offset);
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       const targetDayName = dayNames[currentDateForMeal.getDay()];
-      
       if (targetDayName !== '일') {
-        const tabBtns = document.querySelectorAll('.day-tab-btn');
-        tabBtns.forEach(btn => {
-            if (btn.textContent.trim() === targetDayName) {
-            btn.classList.add('active-day-btn');
-            } else {
-            btn.classList.remove('active-day-btn');
-            }
-        });
-        selectedDay = targetDayName;
-        renderTimetables();
+        selectDay(targetDayName);
       } else {
-        const tabBtns = document.querySelectorAll('.day-tab-btn');
-        tabBtns.forEach(btn => btn.classList.remove('active-day-btn'));
+        fetchMealsForDate();
       }
-      
-      fetchMealsForDate();
     }
 
-    function renderNotices() {
-      const container = document.getElementById('notices-list');
-      if (!container) return;
-      if (notices.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">등록된 공지사항이 없습니다.</div>`;
-        return;
-      }
-      container.innerHTML = notices.map(item => `
-        <div class="glass-card p-2.5 flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2 flex-1 mr-2">
-            <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 shrink-0">${item.tag || '공지'}</span>
-            <span class="text-white font-medium truncate">${item.text}</span>
-          </div>
-          <button onclick="deleteNotice(${item.id})" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
-        </div>
-      `).join('');
+    // --- 구글 시트 실시간 연동 (공지사항 & D-Day) 복구 ---
+    async function fetchNotices() {
+      try {
+        const res = await fetch(SHEET_URL_NOTICES + '&_nocache=' + Date.now());
+        if (res.ok) {
+          const text = await res.text();
+          const rows = parseCSV(text);
+          const container = document.getElementById('notices-list');
+          if (rows.length > 1) {
+            container.innerHTML = '';
+            for (let i = 1; i < rows.length; i++) {
+              const type = rows[i][0] || '일반';
+              const content = rows[i][1] || '';
+              if (content) {
+                const isImportant = type.includes('중요');
+                const badgeClass = isImportant ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-sky-500/20 text-sky-300 border-sky-500/30';
+                const div = document.createElement('div');
+                div.className = "glass-card p-2.5 flex items-center gap-2.5 text-xs";
+                div.innerHTML = `<span class="px-2 py-0.5 rounded font-black border shrink-0 ${badgeClass}">${type}</span><span class="text-white font-medium">${content}</span>`;
+                container.appendChild(div);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+      setTimeout(fetchNotices, 15000);
     }
 
-    function saveNotice() {
-      const input = document.getElementById('notice-text-input');
-      const tagInput = document.getElementById('notice-tag-input');
-      const text = input.value.trim();
-      if (!text) return;
-      notices.unshift({ id: Date.now(), text, tag: tagInput.value });
-      localStorage.setItem('hk_notices', JSON.stringify(notices));
-      input.value = "";
-      closeModal('add-notice-modal');
-      renderNotices();
+    async function fetchDDays() {
+      try {
+        const res = await fetch(SHEET_URL_DDAYS + '&_nocache=' + Date.now());
+        if (res.ok) {
+          const text = await res.text();
+          const rows = parseCSV(text);
+          const container = document.getElementById('ddays-list');
+          if (rows.length > 1) {
+            container.innerHTML = '';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            for (let i = 1; i < rows.length; i++) {
+              const title = rows[i][0];
+              const dateStr = rows[i][1];
+              if (title && dateStr) {
+                const target = new Date(dateStr);
+                target.setHours(0,0,0,0);
+                const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+                const ddayText = diffDays === 0 ? 'D-Day' : (diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`);
+                const div = document.createElement('div');
+                div.className = "glass-card p-3 flex justify-between items-center border-l-4 border-l-amber-400";
+                div.innerHTML = `
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 text-xs font-black rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">${ddayText}</span>
+                    <span class="font-bold text-white text-xs">${title}</span>
+                  </div>
+                  <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
+                `;
+                container.appendChild(div);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+      setTimeout(fetchDDays, 60000);
     }
 
-    function deleteNotice(id) {
-      notices = notices.filter(n => n.id !== id);
-      localStorage.setItem('hk_notices', JSON.stringify(notices));
-      renderNotices();
+    // --- 구글 시트 실시간 연동 (긴급 알림 모달) 복구 ---
+    async function pollGoogleSheetAlerts() {
+      try {
+        const res = await fetch(SHEET_URL_ALERT + '&_nocache=' + Date.now());
+        if (res.ok) {
+          const text = await res.text();
+          const rows = parseCSV(text);
+          if (rows.length >= 2) {
+            const activeVal = (rows[1][0] || '').trim().toUpperCase();
+            const isActive = (activeVal === 'TRUE' || activeVal === '1' || activeVal === 'Y');
+            const title = rows[1][1] || '교무실 긴급 전달사항';
+            const message = rows[1][2] || '';
+            const alertKey = title + '::' + message;
+
+            const modal = document.getElementById('emergency-alert-modal');
+            if (isActive && message.trim() !== '') {
+              if (lastDismissedAlertText !== alertKey) {
+                document.getElementById('emergency-sender').innerText = title;
+                document.getElementById('emergency-content').innerText = message;
+                modal.classList.remove('hidden');
+              }
+            } else {
+              modal.classList.add('hidden');
+              lastDismissedAlertText = '';
+            }
+          }
+        }
+      } catch (e) {}
+      setTimeout(pollGoogleSheetAlerts, 5000);
     }
 
-    function renderDDays() {
-      const container = document.getElementById('ddays-list');
-      if (!container) return;
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      container.innerHTML = ddays.map(item => {
-        const target = new Date(item.date);
-        target.setHours(0,0,0,0);
-        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-        let dDayStr = diffDays === 0 ? "D-Day" : diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
-        return `
-          <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400">
-            <div>
-              <div class="text-xs font-bold text-white">${item.title}</div>
-              <div class="text-[10px] text-slate-400">${item.date}</div>
-            </div>
-            <span class="text-sm font-black text-amber-300 font-mono px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">${dDayStr}</span>
-          </div>
-        `;
-      }).join('');
+    async function dismissAlert() {
+      const title = document.getElementById('emergency-sender').innerText;
+      const message = document.getElementById('emergency-content').innerText;
+      lastDismissedAlertText = title + '::' + message;
+      document.getElementById('emergency-alert-modal').classList.add('hidden');
+
+      try {
+        await fetch(GOOGLE_SCRIPT_WEBAPP_URL + '?action=dismiss&_t=' + Date.now(), { method: 'GET', mode: 'no-cors' });
+      } catch (e) {}
     }
 
-    function saveDDay() {
-      const title = document.getElementById('dday-title-input').value.trim();
-      const date = document.getElementById('dday-date-input').value;
-      if (!title || !date) return;
-      ddays.push({ id: Date.now(), title, date });
-      localStorage.setItem('hk_ddays', JSON.stringify(ddays));
-      document.getElementById('dday-title-input').value = "";
-      closeModal('add-dday-modal');
-      renderDDays();
-    }
-
-    function deleteDDay(id) {
-      ddays = ddays.filter(d => d.id !== id);
-      localStorage.setItem('hk_ddays', JSON.stringify(ddays));
-      renderDDays();
-    }
-
-    function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
     function toggleFullscreen() {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => {});
       else if (document.exitFullscreen) document.exitFullscreen();
     }
+    function toggleAudioChime() {
+      audioChimeEnabled = !audioChimeEnabled;
+      const btn = document.getElementById('chime-btn');
+      if (btn) {
+        btn.classList.toggle('text-amber-400', audioChimeEnabled);
+        btn.classList.toggle('text-slate-500', !audioChimeEnabled);
+      }
+    }
 
+    // --- 전체 초기화 시작 지점 ---
     window.onload = function () {
       setInterval(updateClock, 1000);
       updateClock();
-      
-      // 새 페이지 접속 시 오늘 날짜 및 요일로 자동 세팅
+
+      // 1. 오늘 날짜 및 요일 구하기
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       let todayName = dayNames[new Date().getDay()];
-      
+
+      // 2. 만약 오늘이 일요일이면 월요일로 맞추기
       if (todayName === '일') {
-        todayName = '월'; // 일요일인 경우 월요일 시간표와 월요일 급식으로 기본 세팅
+        todayName = '월';
         currentDateForMeal.setDate(currentDateForMeal.getDate() + 1);
       }
       
+      // 3. 탭 포커스 자동 활성화
       selectDay(todayName);
       
-      renderNotices();
-      renderDDays();
+      // 4. 구글 시트 기반 방과후학교 호출
+      fetchGoogleSheetsAfterschoolSchedule();
+      
+      // 5. 구글 시트 실시간 폴링 기능 시작
+      fetchNotices();
+      fetchDDays();
+      pollGoogleSheetAlerts();
     };
   </script>
 </body>

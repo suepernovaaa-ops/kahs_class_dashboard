@@ -157,12 +157,12 @@
     <!-- 요일 선택 탭 -->
     <div class="flex items-center gap-1.5" id="header-day-tabs">
       <span class="text-xs text-slate-400 font-bold mr-1 hidden sm:inline"><i class="fa-solid fa-calendar-day mr-1 text-sky-400"></i>요일선택:</span>
-      <button onclick="selectDay('월', 1)" class="day-tab-btn day-btn-1 px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">월</button>
-      <button onclick="selectDay('화', 2)" class="day-tab-btn day-btn-2 px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">화</button>
-      <button onclick="selectDay('수', 3)" class="day-tab-btn day-btn-3 px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">수</button>
-      <button onclick="selectDay('목', 4)" class="day-tab-btn day-btn-4 px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">목</button>
-      <button onclick="selectDay('금', 5)" class="day-tab-btn day-btn-5 px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">금</button>
-      <button onclick="selectDay('토', 6)" class="day-tab-btn day-btn-6 px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">토</button>
+      <button onclick="selectDay('월')" class="day-tab-btn px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">월</button>
+      <button onclick="selectDay('화')" class="day-tab-btn px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">화</button>
+      <button onclick="selectDay('수')" class="day-tab-btn px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">수</button>
+      <button onclick="selectDay('목')" class="day-tab-btn px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">목</button>
+      <button onclick="selectDay('금')" class="day-tab-btn px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">금</button>
+      <button onclick="selectDay('토')" class="day-tab-btn px-3 py-1.5 text-xs rounded-lg bg-slate-800/80 border border-slate-700 font-bold text-slate-300 hover:text-white hover:border-sky-400/50 transition">토</button>
     </div>
   </div>
 
@@ -187,7 +187,7 @@
       </div>
     </div>
 
-    <!-- CARD 2: 방과후학교 -->
+    <!-- CARD 2: 방과후학교 (불필요한 텍스트 완전 제거) -->
     <div class="glass-panel p-5 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/80">
@@ -207,7 +207,7 @@
       </div>
     </div>
 
-    <!-- CARD 3: 식단 (실시간 NEIS 날짜 연동 적용 완료) -->
+    <!-- CARD 3: 식단 (이름 변경 및 요일 연동) -->
     <div class="glass-panel p-5 flex flex-col justify-between">
       <div>
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/80">
@@ -215,18 +215,19 @@
             <span>🍱</span> 식단
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">교육부 NEIS 실시간</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">NEIS 실시간</span>
             <button onclick="openModal('edit-meal-modal')" title="급식 수동 수정" class="text-slate-400 hover:text-emerald-300 text-xs p-1"><i class="fa-solid fa-pen-to-square"></i></button>
           </div>
         </div>
 
         <div class="space-y-3 overflow-y-auto max-h-[440px] pr-1" id="meals-container">
-          <div class="text-center py-10 text-slate-500 text-xs">교육부 NEIS 급식 데이터를 불러오는 중...</div>
+          <!-- Rendered dynamically -->
+          <div class="text-center py-8 text-slate-500 text-xs">식단 정보를 불러오는 중...</div>
         </div>
       </div>
 
       <div class="pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400 mt-2">
-        <span id="meal-date-display" class="font-bold text-slate-300">2026.00.00 (월)</span>
+        <span id="meal-date-display" class="font-bold text-slate-300"></span>
         <div class="flex gap-2">
           <button onclick="changeMealDate(-1)" class="p-1 hover:text-white"><i class="fa-solid fa-chevron-left"></i> 어제</button>
           <button onclick="changeMealDate(0)" class="p-1 text-emerald-400 font-bold">오늘</button>
@@ -237,8 +238,9 @@
 
   </main>
 
-  <!-- Bottom Section -->
+  <!-- Bottom Section: 공지 사항 & 주요 일정 -->
   <footer class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    
     <div class="glass-panel p-5 lg:col-span-2">
       <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/80">
         <h2 class="text-base font-extrabold text-sky-300 flex items-center gap-2">
@@ -248,7 +250,9 @@
           + 등록
         </button>
       </div>
-      <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1" id="notices-list"></div>
+
+      <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1" id="notices-list">
+      </div>
     </div>
 
     <div class="glass-panel p-5 lg:col-span-1">
@@ -260,24 +264,39 @@
           + 일정 추가
         </button>
       </div>
-      <div class="grid grid-cols-1 gap-2.5 max-h-48 overflow-y-auto pr-1" id="ddays-list"></div>
+
+      <div class="grid grid-cols-1 gap-2.5 max-h-48 overflow-y-auto pr-1" id="ddays-list">
+      </div>
     </div>
+
   </footer>
 
   <!-- MODALS -->
   <div id="emergency-alert-modal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
-    <div class="glass-panel max-w-lg w-full p-6 border-2 border-rose-500/80 shadow-2xl relative overflow-hidden">
+    <div class="glass-panel max-w-lg w-full p-6 border-2 border-rose-500/80 shadow-2xl shadow-rose-950/50 relative overflow-hidden">
       <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-rose-500"></div>
+      
       <div class="flex justify-between items-center pb-3 border-b border-rose-900/50 mb-4">
-        <div class="flex items-center gap-2 text-rose-400 font-black text-lg">📢 교무실 긴급 알림</div>
+        <div class="flex items-center gap-2 text-rose-400 font-black text-lg tracking-tight">
+          <span class="p-1.5 bg-rose-500/20 rounded-lg border border-rose-500/40">📢</span>
+          교무실 긴급 알림
+        </div>
         <span id="emergency-time" class="text-xs text-slate-400 font-mono">13:45</span>
       </div>
+
       <div class="py-4 text-center">
-        <div class="inline-block px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold mb-3" id="emergency-sender">담임 선생님</div>
-        <div id="emergency-content" class="text-xl font-black text-white leading-relaxed px-2">알림 내용</div>
+        <div class="inline-block px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold mb-3" id="emergency-sender">
+          담임 선생님
+        </div>
+        <div id="emergency-content" class="text-xl font-black text-white leading-relaxed tracking-tight px-2">
+          알림 내용이 들어갑니다.
+        </div>
       </div>
+
       <div class="mt-6 flex justify-end">
-        <button onclick="closeModal('emergency-alert-modal')" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-sm transition">확인하였습니다</button>
+        <button onclick="closeModal('emergency-alert-modal')" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg transition">
+          확인하였습니다
+        </button>
       </div>
     </div>
   </div>
@@ -285,13 +304,20 @@
   <div id="alert-history-modal" class="fixed inset-0 modal-backdrop hidden z-50 flex items-center justify-center p-4">
     <div class="glass-panel max-w-lg w-full p-6 border border-rose-500/30">
       <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-4">
-        <h3 class="text-lg font-bold text-rose-300"><i class="fa-solid fa-clock-rotate-left mr-2"></i>긴급 알림 히스토리</h3>
+        <h3 class="text-lg font-bold text-rose-300 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-rose-400"></i> 긴급 알림 히스토리
+        </h3>
         <button onclick="closeModal('alert-history-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <div id="alert-history-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1 mb-4"></div>
+
+      <div id="alert-history-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1 mb-4">
+      </div>
+
       <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-xs text-slate-400">
         <span>총 <strong id="alert-count" class="text-rose-400">0</strong>개의 알림</span>
-        <button onclick="clearAlertHistory()" class="text-slate-400 hover:text-rose-400 transition"><i class="fa-solid fa-trash-can mr-1"></i>전체 삭제</button>
+        <button onclick="clearAlertHistory()" class="text-slate-400 hover:text-rose-400 transition">
+          <i class="fa-solid fa-trash-can mr-1"></i>전체 삭제
+        </button>
       </div>
     </div>
   </div>
@@ -302,6 +328,7 @@
         <h3 class="text-lg font-bold text-sky-300">새 공지사항 등록</h3>
         <button onclick="closeModal('add-notice-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
+
       <div class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">공지 내용</label>
@@ -317,6 +344,7 @@
           </select>
         </div>
       </div>
+
       <div class="flex justify-end gap-2 mt-5">
         <button onclick="closeModal('add-notice-modal')" class="px-4 py-2 bg-slate-800 rounded-lg text-sm">취소</button>
         <button onclick="saveNotice()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 font-bold text-white rounded-lg text-sm">등록하기</button>
@@ -330,6 +358,7 @@
         <h3 class="text-lg font-bold text-amber-300">주요 일정 D-Day 추가</h3>
         <button onclick="closeModal('add-dday-modal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
+
       <div class="space-y-3">
         <div>
           <label class="block text-xs text-slate-400 mb-1">일정 제목</label>
@@ -340,6 +369,7 @@
           <input type="date" id="dday-date-input" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
         </div>
       </div>
+
       <div class="flex justify-end gap-2 mt-5">
         <button onclick="closeModal('add-dday-modal')" class="px-4 py-2 bg-slate-800 rounded-lg text-sm">취소</button>
         <button onclick="saveDDay()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 font-bold text-white rounded-lg text-sm">추가하기</button>
@@ -355,6 +385,7 @@
     let selectedDay = '월';
     let currentDateForMeal = new Date(); // 현재 선택된 급식 날짜 객체
 
+    // 로컬 스토리지 또는 기본 데이터 설정
     let regularTimetable = JSON.parse(localStorage.getItem('hk_regular_tt')) || {
       '월': [
         { period: 1, subject: '항공기체', teacher: '이OO 선생님' },
@@ -503,16 +534,17 @@
       const dateEl = document.getElementById('clock-date');
       if (dateEl) dateEl.textContent = `${year}.${month}.${date} (${dayName})요일`;
 
-      if (!window.hasInitializedDay) {
-        if (dayName !== '일') {
-          selectedDay = dayName;
-          currentDateForMeal = new Date(); // 오늘 날짜로 초기화
-        }
-        window.hasInitializedDay = true;
-        selectDay(selectedDay);
-      }
-
       updateLivePeriodStatus(now);
+    }
+
+    function formatTeacher(name) {
+      if (!name) return '';
+      let t = name.trim();
+      // 이름이 비어있지 않고, '선생님', '교사', '급식실'로 끝나지 않으면 ' 선생님'을 붙임
+      if (t !== '' && !t.endsWith('선생님') && !t.endsWith('교사') && t !== '급식실') {
+        return t + ' 선생님';
+      }
+      return t;
     }
 
     function updateLivePeriodStatus(now) {
@@ -552,7 +584,7 @@
               if (item) { subjectText = item.subject; teacherText = item.teacher; }
             }
           }
-          info.innerHTML = `<strong>${subjectText}</strong> ${teacherText ? `<span class="text-xs text-sky-400 font-normal ml-2">(${teacherText})</span>` : ''}`;
+          info.innerHTML = `<strong>${subjectText}</strong> ${teacherText ? `<span class="text-xs text-sky-400 font-normal ml-2">(${formatTeacher(teacherText)})</span>` : ''}`;
           break;
         }
       }
@@ -564,11 +596,10 @@
       }
     }
 
-    // 요일 탭 클릭 시 해당 요일 시간표 및 해당 날짜의 NEIS 급식 동기화 호출
-    function selectDay(day, dayNumOverride) {
+    // 요일 변경 시 동작
+    function selectDay(day) {
       selectedDay = day;
 
-      // 요일별 날짜 오프셋 계산하여 currentDateForMeal 맞추기
       const daysMap = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
       const targetDayIdx = daysMap[day];
       const now = new Date();
@@ -588,7 +619,7 @@
       });
 
       renderTimetables();
-      fetchMealsForDate(); // 선택된 요일 날짜의 실시간 NEIS 식단 호출
+      fetchMealsForDate();
     }
 
     function renderTimetables() {
@@ -610,7 +641,7 @@
             <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition">
               <span class="text-xs font-bold text-sky-300 w-14">${item.period}교시</span>
               <span class="text-sm font-extrabold text-white flex-1 mx-2">${item.subject}</span>
-              <span class="text-xs text-slate-400">${item.teacher}</span>
+              <span class="text-xs text-slate-400">${formatTeacher(item.teacher)}</span>
             </div>
           `).join('');
         }
@@ -622,13 +653,12 @@
           <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition">
             <span class="text-xs font-bold text-amber-300 w-14">${item.period}교시</span>
             <span class="text-sm font-extrabold text-white flex-1 mx-2">${item.subject}</span>
-            <span class="text-xs text-slate-400">${item.teacher || ''}</span>
+            <span class="text-xs text-slate-400">${formatTeacher(item.teacher)}</span>
           </div>
         `).join('');
       }
     }
 
-    // [핵심 수정] 선택된 날짜(currentDateForMeal) 기준 교육부 NEIS 실시간 급식 호출
     function fetchMealsForDate() {
       const year = currentDateForMeal.getFullYear();
       const month = String(currentDateForMeal.getMonth() + 1).padStart(2, '0');
@@ -641,7 +671,6 @@
         dateDisplayEl.textContent = `${year}.${month}.${date} (${days[currentDateForMeal.getDay()]})`;
       }
 
-      // 학교 코드 7801228 (한국항공고등학교)
       const neisUrl = `https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&pIndex=1&pSize=10&ATPT_OFCDC_SC_CODE=K10&SD_SCHUL_CODE=7801228&MLSV_YMD=${ymd}`;
 
       fetch(neisUrl)
@@ -662,7 +691,7 @@
           renderMealCardsWithTiming(mealData);
         })
         .catch(err => {
-          renderMealCardsWithTiming({ breakfast: "급식 데이터 연동 실패", lunch: "급식 데이터 연동 실패", dinner: "급식 데이터 연동 실패" });
+          renderMealCardsWithTiming({ breakfast: "데이터 연동 실패", lunch: "데이터 연동 실패", dinner: "데이터 연동 실패" });
         });
     }
 
@@ -708,29 +737,70 @@
       `;
     }
 
+    // 어제/오늘/내일 버튼 클릭 시 동작
     function changeMealDate(offset) {
-      currentDateForMeal.setDate(currentDateForMeal.getDate() + offset);
-      // 날짜 변경에 따라 요일 탭 상태도 맞추기
+      if(offset === 0){
+          currentDateForMeal = new Date();
+      } else {
+          currentDateForMeal.setDate(currentDateForMeal.getDate() + offset);
+      }
+      
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       const targetDayName = dayNames[currentDateForMeal.getDay()];
+      
       if (targetDayName !== '일') {
-        selectDay(targetDayName);
+        const tabBtns = document.querySelectorAll('.day-tab-btn');
+        tabBtns.forEach(btn => {
+            if (btn.textContent.trim() === targetDayName) {
+            btn.classList.add('active-day-btn');
+            } else {
+            btn.classList.remove('active-day-btn');
+            }
+        });
+        selectedDay = targetDayName;
+        renderTimetables();
       } else {
-        fetchMealsForDate();
+        const tabBtns = document.querySelectorAll('.day-tab-btn');
+        tabBtns.forEach(btn => btn.classList.remove('active-day-btn'));
       }
+      
+      fetchMealsForDate();
     }
 
     function renderNotices() {
       const container = document.getElementById('notices-list');
       if (!container) return;
+      if (notices.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">등록된 공지사항이 없습니다.</div>`;
+        return;
+      }
       container.innerHTML = notices.map(item => `
         <div class="glass-card p-2.5 flex items-center justify-between text-xs">
           <div class="flex items-center gap-2 flex-1 mr-2">
             <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 shrink-0">${item.tag || '공지'}</span>
             <span class="text-white font-medium truncate">${item.text}</span>
           </div>
+          <button onclick="deleteNotice(${item.id})" class="text-slate-500 hover:text-rose-400"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       `).join('');
+    }
+
+    function saveNotice() {
+      const input = document.getElementById('notice-text-input');
+      const tagInput = document.getElementById('notice-tag-input');
+      const text = input.value.trim();
+      if (!text) return;
+      notices.unshift({ id: Date.now(), text, tag: tagInput.value });
+      localStorage.setItem('hk_notices', JSON.stringify(notices));
+      input.value = "";
+      closeModal('add-notice-modal');
+      renderNotices();
+    }
+
+    function deleteNotice(id) {
+      notices = notices.filter(n => n.id !== id);
+      localStorage.setItem('hk_notices', JSON.stringify(notices));
+      renderNotices();
     }
 
     function renderDDays() {
@@ -755,6 +825,23 @@
       }).join('');
     }
 
+    function saveDDay() {
+      const title = document.getElementById('dday-title-input').value.trim();
+      const date = document.getElementById('dday-date-input').value;
+      if (!title || !date) return;
+      ddays.push({ id: Date.now(), title, date });
+      localStorage.setItem('hk_ddays', JSON.stringify(ddays));
+      document.getElementById('dday-title-input').value = "";
+      closeModal('add-dday-modal');
+      renderDDays();
+    }
+
+    function deleteDDay(id) {
+      ddays = ddays.filter(d => d.id !== id);
+      localStorage.setItem('hk_ddays', JSON.stringify(ddays));
+      renderDDays();
+    }
+
     function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
     function toggleFullscreen() {
@@ -765,11 +852,21 @@
     window.onload = function () {
       setInterval(updateClock, 1000);
       updateClock();
-      selectDay('월');
+      
+      // 새 페이지 접속 시 오늘 날짜 및 요일로 자동 세팅
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      let todayName = dayNames[new Date().getDay()];
+      
+      if (todayName === '일') {
+        todayName = '월'; // 일요일인 경우 월요일 시간표와 월요일 급식으로 기본 세팅
+        currentDateForMeal.setDate(currentDateForMeal.getDate() + 1);
+      }
+      
+      selectDay(todayName);
+      
       renderNotices();
       renderDDays();
     };
   </script>
 </body>
 </html>
-```eof

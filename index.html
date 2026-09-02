@@ -399,6 +399,10 @@
           if (json.success && json.timetable) {
             regularTimetableData = json.timetable;
             for (let day in regularTimetableData) {
+              if (day !== '토') {
+                // [수정] "자율" 또는 빈 수업 완전 제거 (있는 수업만 노출)
+                regularTimetableData[day] = regularTimetableData[day].filter(item => item.subject && item.subject !== '자율' && item.subject !== '-');
+              }
               regularTimetableData[day].forEach(item => {
                 item.teacher = formatTeacher(item.teacher);
               });
@@ -415,7 +419,7 @@
         console.warn("컴시간 연동 실패, 저장된 시트로 전환합니다.");
       }
       
-      // 2순위: 구글 시트 백업본 (초강력 파싱 적용)
+      // 2순위: 구글 시트 백업본 (초강력 파싱 + 빈 교시 삭제 적용)
       try {
         const sheetId = '1yfOSkEkHqoWG2bRLj10Wd0ns9M_Rs8n9KxP7VNthyto';
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&_nocache=${Date.now()}`;
@@ -436,7 +440,7 @@
             let colMap = null;
             let startRow = -1;
 
-            // 1단계: 요일 헤더(월,화,수) 문자열 탐색 (최대 5번째 줄까지만)
+            // 1단계: 요일 헤더 탐색
             for (let i = 0; i < Math.min(rows.length, 5); i++) {
               if (!rows[i] || !rows[i].c) continue;
               let tempMap = {};
@@ -452,20 +456,19 @@
                 }
               });
               
-              if (count >= 3) { // 3개 이상의 요일을 찾으면 헤더 위치 확정
+              if (count >= 3) {
                 colMap = tempMap;
-                startRow = i + 1; // 헤더 다음 줄부터 데이터 시작
+                startRow = i + 1;
                 break;
               }
             }
 
-            // 2단계: 헤더를 못 찾았을 경우, 흔한 패턴인 B열(1) ~ F열(5) 강제 지정
             if (!colMap || startRow === -1) {
                colMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5 };
-               startRow = 1; // 두 번째 줄(index 1)부터 시작한다고 가정
+               startRow = 1;
             }
 
-            // 데이터 추출 (1~7교시)
+            // 데이터 추출 시 '자율'로 억지 채우지 않고 실제 데이터만 배열에 담음!
             for (let p = 1; p <= 7; p++) {
               let rIdx = startRow + (p - 1);
               
@@ -478,17 +481,16 @@
                   rawVal = String(cell.v || cell.f || '').trim();
                 }
                 
+                // [수정] 빈칸이거나 자율이면 아예 무시하고 건너뜀
                 if (rawVal && rawVal !== 'null' && rawVal !== '-' && rawVal !== '자율') {
                   let parsed = splitSubjectAndTeacher(rawVal);
                   tempData[day].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
-                  hasSheetData = true; // 유효한 텍스트 하나라도 발견 시 성공
-                } else {
-                  tempData[day].push({ period: p, subject: '자율', teacher: '' });
+                  hasSheetData = true;
                 }
               });
             }
             
-            // 3단계: B~F열을 다 뒤졌는데도 데이터가 텅 비었다면, A열(0) ~ E열(4) 위치로 재시도
+            // 헤더 못 찾은 2차 방어선에서도 억지 채우기 방지
             if (!hasSheetData) {
                colMap = { '월': 0, '화': 1, '수': 2, '목': 3, '금': 4 };
                for (let p = 1; p <= 7; p++) {
@@ -502,14 +504,13 @@
                    }
                    if (rawVal && rawVal !== 'null' && rawVal !== '-' && rawVal !== '자율') {
                      let parsed = splitSubjectAndTeacher(rawVal);
-                     tempData[day][p-1] = { period: p, subject: parsed.subject, teacher: parsed.teacher };
+                     tempData[day].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
                      hasSheetData = true;
                    }
                  });
                }
             }
             
-            // 데이터가 무사히 파싱되었다면 뱃지를 띄우고 화면에 렌더링
             if (hasSheetData) {
               regularTimetableData = tempData;
               if (badge) {
@@ -517,7 +518,7 @@
                 badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
               }
               renderTimetables();
-              return; // 성공 시 여기서 함수 정상 종료
+              return;
             }
           }
         }
@@ -525,18 +526,13 @@
         console.error("구글 시트 연동 중 에러 발생:", e);
       }
       
-      // 모든 방법이 실패했을 경우에만 '연결 실패' 빨간 뱃지 표시
       if (badge) {
         badge.innerText = "연결 실패";
         badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
       }
       
-      // 기본 백지 상태(자율) 데이터 투입
       if (!regularTimetableData['월'] || regularTimetableData['월'].length === 0) {
         regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
-        for(let d of ['월','화','수','목','금']) {
-            regularTimetableData[d] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '자율', teacher: '' }));
-        }
         regularTimetableData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
       }
       renderTimetables();
@@ -580,8 +576,8 @@
         
         const dayCols = { '화': 14, '수': 23, '목': 32, '금': 41 };
 
-        // 화~금 시트에서 파싱
-        ['화', '수', '목', '금'].forEach(day => {
+        // 화, 수, 목 시트에서 파싱
+        ['화', '수', '목'].forEach(day => {
           const colIdx = dayCols[day];
           const daySchedule = [];
           [8, 9, 10, 11].forEach((period, pIdx) => {
@@ -601,6 +597,46 @@
           });
           afterschoolTimetableData[day] = daySchedule;
         });
+
+        // [수정] 금요일 격주 방과후 파싱 (6교시 데이터 존재 여부로 6~8교시 추출 결정)
+        const friWeekRowOffsets = {
+          1: [9, 10, 11],
+          2: [25, 26, 27],
+          3: [41, 42, 43],
+          4: [57, 58, 59],
+          5: [73, 74, 75]
+        };
+        const friTargetRows = friWeekRowOffsets[weekIdx] || friWeekRowOffsets[4];
+        const friColIdx = dayCols['금'];
+        const friSchedule = [];
+        
+        let period6Val = "";
+        try {
+          if (rows[friTargetRows[0]] && rows[friTargetRows[0]].c && rows[friTargetRows[0]].c[friColIdx]) {
+            period6Val = String(rows[friTargetRows[0]].c[friColIdx].f || rows[friTargetRows[0]].c[friColIdx].v || "").trim();
+          }
+        } catch(e) {}
+
+        if (period6Val && period6Val !== "수업 없음" && period6Val !== "-" && period6Val !== "null") {
+          // 6교시에 데이터가 있으면 6, 7, 8교시를 가져옴
+          [6, 7, 8].forEach((period, pIdx) => {
+            const rowIdx = friTargetRows[pIdx];
+            let val = "";
+            try {
+              if (rows[rowIdx] && rows[rowIdx].c && rows[rowIdx].c[friColIdx]) {
+                val = String(rows[rowIdx].c[friColIdx].f || rows[rowIdx].c[friColIdx].v || "").trim();
+              }
+            } catch(e) {}
+            
+            let parsed = splitSubjectAndTeacher(val);
+            if (!parsed.subject) parsed.subject = "방과후";
+            friSchedule.push({ period, subject: parsed.subject, teacher: parsed.teacher });
+          });
+        } else {
+          // 6교시에 데이터가 없으면 수업 없음 1줄만 표시
+          friSchedule.push({ period: '-', subject: "수업 없음 (방과후 미운영)", teacher: "" });
+        }
+        afterschoolTimetableData['금'] = friSchedule;
 
         // 토요일 파싱 (AY=50)
         const satWeekRowOffsets = {
@@ -634,142 +670,6 @@
       renderTimetables();
     }
 
-    // 4. 공지사항 및 일정 (CSV 파싱 유지)
-    async function fetchNotices() {
-      try {
-        const res = await fetch(SHEET_URL_NOTICES + '&_nocache=' + Date.now());
-        if (res.ok) {
-          const text = await res.text();
-          const rows = parseCSV(text);
-          if (rows.length > 1) {
-            notices = [];
-            for (let i = 1; i < rows.length; i++) {
-              let tag = rows[i][0] || '공지';
-              let content = rows[i][1] || '';
-              if (content) notices.push({ id: i, text: content, tag: tag });
-            }
-            renderNotices();
-          }
-        }
-      } catch (e) {}
-    }
-
-    async function fetchDDays() {
-      try {
-        const res = await fetch(SHEET_URL_DDAYS + '&_nocache=' + Date.now());
-        if (res.ok) {
-          const text = await res.text();
-          const rows = parseCSV(text);
-          if (rows.length > 1) {
-            ddays = [];
-            for (let i = 1; i < rows.length; i++) {
-              let title = rows[i][0];
-              let dateStr = rows[i][1];
-              if (title && dateStr) ddays.push({ id: i, title: title, date: dateStr });
-            }
-            renderDDays();
-          }
-        }
-      } catch (e) {}
-    }
-
-    // 5. 시계 및 일과 엔진
-    function updateClock() {
-      const now = new Date();
-      const days = ['일', '월', '화', '수', '목', '금', '토'];
-      
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      
-      const clockEl = document.getElementById('clock-time');
-      if (clockEl) clockEl.textContent = `${hours}:${minutes}:${seconds}`;
-
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const date = String(now.getDate()).padStart(2, '0');
-      const dayName = days[now.getDay()];
-      
-      const dateEl = document.getElementById('clock-date');
-      if (dateEl) dateEl.textContent = `${year}.${month}.${date} (${dayName})요일`;
-
-      updateLivePeriodStatus(now);
-    }
-
-    function updateLivePeriodStatus(now) {
-      const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const dayIdx = now.getDay();
-      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-      const todayName = dayNames[dayIdx];
-
-      const badge = document.getElementById('active-period-badge');
-      const info = document.getElementById('live-subject-title');
-
-      if (!badge || !info) return;
-
-      if (dayIdx === 0 || dayIdx === 6) {
-        badge.textContent = "주말 휴무";
-        info.textContent = "즐거운 주말 보내세요! ✈️";
-        return;
-      }
-
-      let activeFound = false;
-      for (let p of PERIOD_TIMINGS) {
-        if (currentHM >= p.start && currentHM <= p.end) {
-          activeFound = true;
-          badge.textContent = `${p.label} (${p.start} ~ ${p.end})`;
-          let subjectText = "", teacherText = "";
-
-          if (p.type === "조례") { subjectText = "아침 조례 및 전달사항 확인"; teacherText = "담임 선생님"; }
-          else if (p.type === "점심") { subjectText = "즐거운 점심시간 🍱"; teacherText = "급식실"; }
-          else if (p.type === "저녁") { subjectText = "저녁 식사시간 🌙"; teacherText = "급식실"; }
-          else {
-            const pNum = parseInt(p.type);
-            if (pNum <= 7) {
-              const item = (regularTimetableData[todayName] || []).find(i => i.period === pNum);
-              if (item) { subjectText = item.subject; teacherText = item.teacher; }
-            } else {
-              const item = (afterschoolTimetableData[todayName] || []).find(i => i.period === pNum);
-              if (item) { subjectText = item.subject; teacherText = item.teacher; }
-            }
-          }
-          info.innerHTML = `<strong>${subjectText}</strong> ${teacherText ? `<span class="text-xs text-sky-400 font-normal ml-2">(${teacherText})</span>` : ''}`;
-          break;
-        }
-      }
-
-      if (!activeFound) {
-        if (currentHM < "08:40") { badge.textContent = "등교 및 아침 자율시간"; info.textContent = "오늘 하루도 활기차게 시작하세요! ✈️"; }
-        else if (currentHM > "21:00") { badge.textContent = "방과후 및 야간학습 종료"; info.textContent = "오늘 수업이 완료되었습니다."; }
-        else { badge.textContent = "쉬는시간"; info.textContent = "다음 수업 교재를 준비해 주세요."; }
-      }
-    }
-
-    // 6. UI 렌더링 함수들
-    function selectDay(dayName) {
-      selectedDayName = dayName;
-
-      const daysMap = { '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6 };
-      const targetDayIdx = daysMap[dayName];
-      const now = new Date();
-      const currentDayIdx = now.getDay();
-      const diff = targetDayIdx - currentDayIdx;
-      
-      currentDateForMeal = new Date();
-      currentDateForMeal.setDate(now.getDate() + diff);
-
-      document.querySelectorAll('.day-tab-btn').forEach(btn => {
-        if (btn.textContent.trim() === dayName) {
-          btn.classList.add('active-day-btn');
-        } else {
-          btn.classList.remove('active-day-btn');
-        }
-      });
-
-      renderTimetables();
-      fetchMealsForDate(); // 탭 이동 시 해당 요일의 날짜 계산해서 급식도 맞춤 변경
-    }
-
     function renderTimetables() {
       const regContainer = document.getElementById('regular-timetable-container');
       const aftContainer = document.getElementById('afterschool-timetable-container');
@@ -784,8 +684,9 @@
           `;
         } else {
           const regList = regularTimetableData[selectedDayName] || [];
+          // [수정] 데이터가 아예 비어있으면 억지로 채우지 않고 안내 문구 표시
           if (regList.length === 0) {
-             regContainer.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">시간표 데이터를 불러오는 중입니다...</div>`;
+             regContainer.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm font-bold">예정된 정규 수업이 없습니다.</div>`;
           } else {
              regContainer.innerHTML = regList.map(item => `
               <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition">
@@ -801,11 +702,11 @@
       if (aftContainer) {
         const aftList = afterschoolTimetableData[selectedDayName] || [];
         if (aftList.length === 0) {
-           aftContainer.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs">방과후 일정을 로딩 중입니다...</div>`;
+           aftContainer.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm font-bold">방과후 일정이 없습니다.</div>`;
         } else {
            aftContainer.innerHTML = aftList.map(item => `
             <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition">
-              <span class="text-xs font-bold text-amber-300 w-14">${item.period}교시</span>
+              <span class="text-xs font-bold text-amber-300 w-14">${item.period !== '-' ? item.period + '교시' : '-'}</span>
               <span class="text-sm font-extrabold text-white flex-1 mx-2">${item.subject}</span>
               <span class="text-xs text-slate-400">${item.teacher || ''}</span>
             </div>

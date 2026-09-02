@@ -171,7 +171,7 @@
             <span>📅</span> 정규 수업
           </div>
           <div class="flex items-center gap-2">
-            <!-- 데이터 소스 뱃지 (실시간 변경) -->
+            <!-- 데이터 소스 뱃지 -->
             <span id="timetable-source-badge" class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-700 text-slate-300">
               로딩 중...
             </span>
@@ -384,7 +384,7 @@
       return { subject: text, teacher: '' };
     }
 
-    // 3. 정규 시간표 로더 (핵심: CSV 파싱 버리고 무적의 JSON 파싱으로 교체)
+    // 3. 정규 시간표 로더 (NEIS 삭제, 컴시간 -> 시트 2단계 적용)
     async function loadRegularTimetable() {
       const badge = document.getElementById('timetable-source-badge');
       if (badge) {
@@ -397,49 +397,29 @@
         const res = await fetch(BACKEND_SERVER_URL + '/api/timetable?_t=' + Date.now());
         if (res.ok) {
           const json = await res.json();
-          if (json.success && json.data) {
-            parseComciPayload(json.data);
+          if (json.success && json.timetable) {
+            regularTimetableData = json.timetable;
+            
+            // 포맷 적용 (선생님 호칭 자동 부착)
+            for (let day in regularTimetableData) {
+              regularTimetableData[day].forEach(item => {
+                item.teacher = formatTeacher(item.teacher);
+              });
+            }
+            
             if (badge) {
               badge.innerText = "컴시간알리미";
               badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30";
             }
             renderTimetables();
-            return;
+            return; // 컴시간 성공 시 여기서 멈춤
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("컴시간 서버 통신 실패, 시트로 넘어갑니다.");
+      }
       
-      // 2순위: NEIS API
-      try {
-        const now = new Date();
-        const monday = new Date(now);
-        monday.setDate(now.getDate() - (now.getDay() || 7) + 1);
-        const friday = new Date(monday);
-        friday.setDate(monday.getDate() + 4);
-
-        const fromYmd = monday.getFullYear() + String(monday.getMonth() + 1).padStart(2, '0') + String(monday.getDate()).padStart(2, '0');
-        const toYmd = friday.getFullYear() + String(friday.getMonth() + 1).padStart(2, '0') + String(friday.getDate()).padStart(2, '0');
-
-        const neisUrl = `https://open.neis.go.kr/hub/hisTimetable?Type=json&ATPT_OFCDC_SC_CODE=K10&SD_SCHUL_CODE=7801228&AY=${now.getFullYear()}&SEM=2&GRADE=2&CLASS_NM=2&TI_FROM_YMD=${fromYmd}&TI_TO_YMD=${toYmd}`;
-        
-        const neisRes = await fetch(neisUrl);
-        if (neisRes.ok) {
-          const json = await neisRes.json();
-          if (json.hisTimetable && json.hisTimetable[1].row) {
-            const hasNeisData = parseNeisTimetable(json.hisTimetable[1].row);
-            if (hasNeisData) { // 데이터가 진짜 있을 때만 NEIS 적용하고 리턴
-              if (badge) {
-                badge.innerText = "NEIS 연동";
-                badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-              }
-              renderTimetables();
-              return;
-            }
-          }
-        }
-      } catch (e) {}
-
-      // 3순위: 구글 시트 백업본 (CSV 오류 원천차단 -> tqx=out:json 활용)
+      // 2순위: 구글 시트 백업본 (JSON 파싱 방식으로 변경)
       try {
         const sheetId = '1yfOSkEkHqoWG2bRLj10Wd0ns9M_Rs8n9KxP7VNthyto';
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&_nocache=${Date.now()}`;
@@ -471,38 +451,33 @@
               }
             }
             
-            // 헤더 아래 7교시 읽어오기
             if (headerRowIdx !== -1) {
-              regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
-              regularTimetableData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
+              let tempData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
+              tempData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
               
               let hasSheetData = false;
               
               for (let p = 1; p <= 7; p++) {
                 let rIdx = headerRowIdx + p;
-                if (rIdx < rows.length && rows[rIdx] && rows[rIdx].c) {
-                  ['월', '화', '수', '목', '금'].forEach(day => {
-                    let cIdx = colMap[day];
-                    let rawVal = "";
-                    if (cIdx !== undefined && rows[rIdx].c[cIdx]) {
-                      rawVal = String(rows[rIdx].c[cIdx].v || '').trim();
-                    }
-                    if (rawVal && rawVal !== 'null' && rawVal !== '-') {
-                      let parsed = splitSubjectAndTeacher(rawVal);
-                      regularTimetableData[day].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
-                      hasSheetData = true;
-                    } else {
-                      regularTimetableData[day].push({ period: p, subject: '자율', teacher: '' });
-                    }
-                  });
-                } else {
-                   ['월', '화', '수', '목', '금'].forEach(day => {
-                      regularTimetableData[day].push({ period: p, subject: '자율', teacher: '' });
-                   });
-                }
+                ['월', '화', '수', '목', '금'].forEach(day => {
+                  let cIdx = colMap[day];
+                  let rawVal = "";
+                  // 빈칸이나 줄바꿈이 있어도 안전하게 읽어옴
+                  if (rIdx < rows.length && rows[rIdx] && rows[rIdx].c && cIdx !== undefined && rows[rIdx].c[cIdx]) {
+                    rawVal = String(rows[rIdx].c[cIdx].v || '').trim();
+                  }
+                  if (rawVal && rawVal !== 'null' && rawVal !== '-') {
+                    let parsed = splitSubjectAndTeacher(rawVal);
+                    tempData[day].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
+                    hasSheetData = true;
+                  } else {
+                    tempData[day].push({ period: p, subject: '자율', teacher: '' });
+                  }
+                });
               }
               
               if (hasSheetData) {
+                regularTimetableData = tempData;
                 if (badge) {
                   badge.innerText = "저장된 시간표";
                   badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
@@ -514,61 +489,23 @@
           }
         }
       } catch (e) {
-        console.error("3순위 시트 로딩 에러:", e);
+        console.error("구글 시트 로딩 에러:", e);
       }
       
-      // 모두 실패 시
+      // 모두 실패 시 기본 구조 생성 및 빨간 뱃지 표시
       if (badge) {
         badge.innerText = "연결 실패";
         badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
       }
-      renderTimetables();
-    }
-
-    function parseComciPayload(dataObj) {
-      const dayMap = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금' };
-      regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
-      for (let d = 1; d <= 5; d++) {
-        let dayList = dataObj[d] || dataObj[String(d)] || [];
-        dayList.forEach((item, idx) => {
-          if (item.subject) {
-            regularTimetableData[dayMap[d]].push({ 
-              period: item.period || (idx + 1), 
-              subject: item.subject, 
-              teacher: formatTeacher(item.teacher)
-            });
-          }
-        });
-      }
-      regularTimetableData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
-    }
-
-    function parseNeisTimetable(rows) {
-      const dayMap = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금' };
-      regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
-      let hasData = false;
-
-      rows.forEach(r => {
-        let ymd = r.ALL_TI_YMD;
-        let perio = r.PERIO || r.ITRT_CNT;
-        let content = r.ITRT_CNTNT || r.ITRT_CNT_NM;
-
-        if (ymd && perio && content) {
-          let dateObj = new Date(ymd.substring(0, 4), parseInt(ymd.substring(4, 6)) - 1, ymd.substring(6, 8));
-          let dayIndex = dateObj.getDay();
-          let parsed = splitSubjectAndTeacher(content);
-          
-          if (dayIndex >= 1 && dayIndex <= 5 && parsed.subject) {
-            regularTimetableData[dayMap[dayIndex]].push({ period: parseInt(perio), subject: parsed.subject, teacher: parsed.teacher });
-            hasData = true;
-          }
+      
+      if (!regularTimetableData['월'] || regularTimetableData['월'].length === 0) {
+        regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
+        for(let d of ['월','화','수','목','금']) {
+            regularTimetableData[d] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '자율', teacher: '' }));
         }
-      });
-      for (let d = 1; d <= 5; d++) {
-        regularTimetableData[dayMap[d]].sort((a, b) => a.period - b.period);
+        regularTimetableData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
       }
-      regularTimetableData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
-      return hasData;
+      renderTimetables();
     }
 
     async function fetchGoogleSheetsAfterschoolSchedule() {
@@ -579,7 +516,7 @@
 
       afterschoolTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
 
-      // 월요일 방과후 고정
+      // 월요일 방과후 무조건 고정
       afterschoolTimetableData['월'] = [
         { period: 8, subject: 'TOEIC/한국사', teacher: '' },
         { period: 9, subject: 'TOEIC/한국사', teacher: '' },
@@ -591,7 +528,10 @@
         const res = await fetch(gvizUrl);
         const text = await res.text();
         const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
-        if (!jsonMatch) return;
+        if (!jsonMatch) {
+            renderTimetables();
+            return;
+        }
         const data = JSON.parse(jsonMatch[1]);
         const rows = data.table.rows;
 
@@ -606,6 +546,7 @@
         
         const dayCols = { '화': 14, '수': 23, '목': 32, '금': 41 };
 
+        // 화~금 시트에서 파싱
         ['화', '수', '목', '금'].forEach(day => {
           const colIdx = dayCols[day];
           const daySchedule = [];
@@ -653,7 +594,9 @@
         });
         afterschoolTimetableData['토'] = satSchedule;
 
-      } catch (err) {}
+      } catch (err) {
+          console.error("방과후 시트 파싱 에러:", err);
+      }
       renderTimetables();
     }
 
@@ -790,8 +733,7 @@
       });
 
       renderTimetables();
-      fetchMealsForDate();
-      fetchGoogleSheetsAfterschoolSchedule();
+      fetchMealsForDate(); // 탭 이동 시 해당 요일의 날짜 계산해서 급식도 맞춤 변경
     }
 
     function renderTimetables() {
@@ -981,17 +923,20 @@
       else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    // 7. 초기화
+    // 7. 초기화 실행 구간
     window.onload = function () {
       setInterval(updateClock, 1000);
       updateClock();
 
+      // 시작 시 오늘 요일에 포커스 (일요일일 경우 월요일로 띄워줌)
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       let initDay = dayNames[new Date().getDay()];
       if (initDay === '일') initDay = '월';
       selectDay(initDay);
 
+      // 데이터 호출 시작
       loadRegularTimetable();
+      fetchGoogleSheetsAfterschoolSchedule();
       fetchNotices();
       fetchDDays();
     };

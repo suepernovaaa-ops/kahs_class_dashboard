@@ -488,26 +488,36 @@
     function parseNeisTimetable(rows) {
       const dayMap = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금' };
       regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
+      let hasData = false;
+
       rows.forEach(r => {
         let ymd = r.ALL_TI_YMD;
-        if (ymd && r.ITRT_CNT && r.ITRT_CNT_NM) {
+        // NEIS API 표준 변수명 적용 (PERIO: 교시, ITRT_CNTNT: 과목내용)
+        let perio = r.PERIO || r.ITRT_CNT;
+        let content = r.ITRT_CNTNT || r.ITRT_CNT_NM;
+
+        if (ymd && perio && content) {
           let dateObj = new Date(ymd.substring(0, 4), parseInt(ymd.substring(4, 6)) - 1, ymd.substring(6, 8));
           let dayIndex = dateObj.getDay();
-          let parsed = splitSubjectAndTeacher(r.ITRT_CNT_NM);
+          let parsed = splitSubjectAndTeacher(content);
+          
           if (dayIndex >= 1 && dayIndex <= 5 && parsed.subject) {
-            regularTimetableData[dayMap[dayIndex]].push({ period: parseInt(r.ITRT_CNT), subject: parsed.subject, teacher: parsed.teacher });
+            regularTimetableData[dayMap[dayIndex]].push({ period: parseInt(perio), subject: parsed.subject, teacher: parsed.teacher });
+            hasData = true; // 유효한 데이터가 하나라도 들어갔는지 체크
           }
         }
       });
       for (let d = 1; d <= 5; d++) {
         regularTimetableData[dayMap[d]].sort((a, b) => a.period - b.period);
       }
+      return hasData;
     }
 
     function parseRegularSheet(csvText) {
       const rows = parseCSV(csvText);
       const dayMap = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금' };
       regularTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
+      let hasData = false;
       
       let foundHeaderRow = -1;
       for (let r = 0; r < rows.length; r++) {
@@ -523,11 +533,93 @@
               if (val) {
                 let parsed = splitSubjectAndTeacher(val);
                 regularTimetableData[dayMap[d]].push({ period: p, subject: parsed.subject, teacher: parsed.teacher });
+                hasData = true;
               }
             }
           }
         }
       }
+      return hasData;
+    }
+
+    async function loadRegularTimetable() {
+      const badge = document.getElementById('timetable-source-badge');
+      if (badge) {
+        badge.innerText = "로딩 중...";
+        badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-slate-700 text-slate-300";
+      }
+
+      // 1순위: Python Server (Comci)
+      try {
+        const res = await fetch(BACKEND_SERVER_URL + '/api/timetable?_t=' + Date.now());
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            parseComciPayload(json.data);
+            if (badge) {
+              badge.innerText = "컴시간알리미";
+              badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30";
+            }
+            renderTimetables();
+            return;
+          }
+        }
+      } catch (e) {}
+      
+      // 2순위: NEIS API
+      try {
+        const now = new Date();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - (now.getDay() || 7) + 1);
+        const friday = new Date(monday);
+        friday.setDate(monday.getDate() + 4);
+
+        const fromYmd = monday.getFullYear() + String(monday.getMonth() + 1).padStart(2, '0') + String(monday.getDate()).padStart(2, '0');
+        const toYmd = friday.getFullYear() + String(friday.getMonth() + 1).padStart(2, '0') + String(friday.getDate()).padStart(2, '0');
+
+        const neisUrl = `https://open.neis.go.kr/hub/hisTimetable?Type=json&ATPT_OFCDC_SC_CODE=K10&SD_SCHUL_CODE=7801228&AY=${now.getFullYear()}&SEM=2&GRADE=2&CLASS_NM=2&TI_FROM_YMD=${fromYmd}&TI_TO_YMD=${toYmd}`;
+        
+        const neisRes = await fetch(neisUrl);
+        if (neisRes.ok) {
+          const json = await neisRes.json();
+          if (json.hisTimetable && json.hisTimetable[1].row) {
+            const hasNeisData = parseNeisTimetable(json.hisTimetable[1].row);
+            // 데이터가 실제로 있을 때만 여기서 멈춤, 비어있으면 3순위로 통과
+            if (hasNeisData) {
+              if (badge) {
+                badge.innerText = "NEIS 연동";
+                badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+              }
+              renderTimetables();
+              return;
+            }
+          }
+        }
+      } catch (e) {}
+
+      // 3순위: 구글 시트 백업본 (최후의 보루)
+      try {
+        const sheetRes = await fetch(SHEET_URL_REGULAR + '&_nocache=' + Date.now());
+        if (sheetRes.ok) {
+          const text = await sheetRes.text();
+          const hasSheetData = parseRegularSheet(text);
+          if (hasSheetData) {
+            if (badge) {
+              badge.innerText = "저장된 시간표";
+              badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+            }
+            renderTimetables();
+            return;
+          }
+        }
+      } catch (e) {}
+      
+      // 모두 실패 시 (네트워크 오류 등)
+      if (badge) {
+        badge.innerText = "연결 실패";
+        badge.className = "text-[11px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+      }
+      renderTimetables();
     }
 
     async function fetchGoogleSheetsAfterschoolSchedule() {

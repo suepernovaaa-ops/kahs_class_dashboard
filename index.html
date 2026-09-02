@@ -19,7 +19,7 @@
           fontFamily: { sans: ['Pretendard', 'sans-serif'] },
           colors: {
             brand: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 900: '#0c4a6e' },
-            dark: { bg: '#0B1120', card: '#1E293B', border: '#334155' }
+            dark: { bg: '#0B1120', panel: '#1E293B', card: '#131B2F', border: '#334155' }
           }
         }
       }
@@ -31,50 +31,28 @@
       font-family: 'Pretendard', sans-serif;
       background-color: #0B1120;
       color: #F8FAFC;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%);
       min-height: 100vh;
       margin: 0;
-    }
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 24px;
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      transition: all 0.2s ease;
-    }
-    .glass-card:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.1);
     }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
   </style>
 </head>
-<body class="p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+<body class="p-4 md:p-6 lg:p-8 flex flex-col gap-5">
 
   <!-- ================= HEADER ================= -->
-  <header class="glass-panel p-6 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-    <div class="absolute -left-10 -top-10 w-40 h-40 bg-brand-500/20 rounded-full blur-3xl"></div>
-    
+  <header class="bg-[#1E293B] p-5 rounded-2xl border border-slate-700/50 shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
     <div class="flex items-center gap-5 z-10">
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
-        <i class="fa-solid fa-plane-departure text-white text-2xl"></i>
+      <div class="w-14 h-14 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-inner">
+        <i class="fa-solid fa-plane text-sky-400 text-2xl"></i>
       </div>
       <div>
         <div class="flex items-center gap-3 mb-1">
-          <h1 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 tracking-tight">
+          <h1 class="text-2xl font-black text-white tracking-tight">
             한국항공고등학교 2학년 2반
           </h1>
-          <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex items-center gap-1.5">
+          <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 shadow-[0_0_8px_rgba(16,185,129,0.3)]">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>라이브
           </span>
         </div>
@@ -84,41 +62,44 @@
 
     <div class="flex items-center gap-6 z-10">
       <div class="text-right">
-        <div id="clock" class="text-4xl md:text-5xl font-black text-white tracking-tighter font-mono" style="text-shadow: 0 0 20px rgba(255,255,255,0.3);">
+        <div id="clock" class="text-4xl md:text-5xl font-black text-white tracking-tighter font-mono">
           00:00:00
         </div>
-        <div id="date" class="text-brand-300 text-sm font-bold mt-1">로딩 중...</div>
+        <div id="date" class="text-slate-400 text-sm font-bold mt-1">로딩 중...</div>
       </div>
     </div>
   </header>
 
   <!-- ================= NAVIGATION TABS ================= -->
-  <div class="flex flex-col md:flex-row items-center justify-between gap-4 glass-panel p-2 pl-6">
-    <div class="flex items-center gap-4 text-sm">
-      <span class="px-3 py-1 bg-brand-500/20 text-brand-300 font-bold rounded-lg border border-brand-500/30">LIVE CLASS STATUS</span>
-      <span class="text-slate-300 font-medium" id="current-class-info"><i class="fa-solid fa-chalkboard-user mr-2 text-slate-400"></i>수업 정보 불러오는 중...</span>
+  <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-[#1E293B] p-2 pl-5 rounded-2xl border border-slate-700/50 shadow-lg">
+    <div class="flex items-center gap-3 text-sm">
+      <span class="px-3 py-1 bg-sky-500/20 text-sky-400 font-black rounded-lg border border-sky-500/30 text-xs">LIVE CLASS STATUS</span>
+      <span class="text-white font-bold bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-chalkboard-user text-slate-400"></i> 등교 및 아침 자율시간
+      </span>
+      <span class="text-slate-300 font-bold ml-1 hidden md:block">오늘 하루도 활기차게 시작하세요! ✈️</span>
     </div>
     
-    <div class="flex gap-1 bg-dark-card/50 p-1 rounded-xl border border-white/5">
-      <div class="px-3 py-1.5 text-xs font-bold text-slate-400 flex items-center mr-1"><i class="fa-solid fa-calendar-day mr-1.5"></i>요일선택:</div>
-      <button onclick="selectDay('월')" id="tab-월" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-white/10 transition">월</button>
-      <button onclick="selectDay('화')" id="tab-화" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-white/10 transition">화</button>
-      <button onclick="selectDay('수')" id="tab-수" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-white/10 transition">수</button>
-      <button onclick="selectDay('목')" id="tab-목" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-white/10 transition">목</button>
-      <button onclick="selectDay('금')" id="tab-금" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-white/10 transition">금</button>
+    <div class="flex gap-1 bg-slate-900/50 p-1.5 rounded-xl border border-slate-700/50">
+      <div class="px-3 py-1.5 text-xs font-black text-slate-400 flex items-center mr-1"><i class="fa-solid fa-calendar-day mr-1.5"></i>요일선택:</div>
+      <button onclick="selectDay('월')" id="tab-월" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition">월</button>
+      <button onclick="selectDay('화')" id="tab-화" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition">화</button>
+      <button onclick="selectDay('수')" id="tab-수" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition">수</button>
+      <button onclick="selectDay('목')" id="tab-목" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition">목</button>
+      <button onclick="selectDay('금')" id="tab-금" class="day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition">금</button>
     </div>
   </div>
 
   <!-- ================= MAIN CONTENT ================= -->
-  <main class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+  <main class="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
     
     <!-- 1. 정규 수업 -->
-    <section class="glass-panel p-6 flex flex-col">
-      <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-        <h2 class="text-xl font-black text-white flex items-center gap-3">
-          <i class="fa-solid fa-calendar-days text-brand-400"></i> 정규 수업
+    <section class="bg-[#1E293B] p-6 rounded-2xl border border-slate-700/50 shadow-lg flex flex-col h-[420px]">
+      <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-700/80">
+        <h2 class="text-lg font-black text-white flex items-center gap-2">
+          <i class="fa-solid fa-calendar-days text-sky-400"></i> 정규 수업
         </h2>
-        <span id="regular-status" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-500/20 text-slate-300 border border-white/10">
+        <span id="regular-status" class="px-2.5 py-1 rounded-md text-xs font-bold bg-slate-700 text-slate-300 border border-slate-600">
           로딩 중...
         </span>
       </div>
@@ -128,13 +109,13 @@
     </section>
 
     <!-- 2. 방과후학교 -->
-    <section class="glass-panel p-6 flex flex-col">
-      <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-        <h2 class="text-xl font-black text-white flex items-center gap-3">
+    <section class="bg-[#1E293B] p-6 rounded-2xl border border-slate-700/50 shadow-lg flex flex-col h-[420px]">
+      <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-700/80">
+        <h2 class="text-lg font-black text-white flex items-center gap-2">
           <i class="fa-solid fa-screwdriver-wrench text-amber-400"></i> 방과후학교
         </h2>
-        <span id="afterschool-status" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/20">
-          구글 시트 연동 <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
+        <span id="afterschool-status" class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+          구글 시트 연동 <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
         </span>
       </div>
       <div id="afterschool-timetable-list" class="space-y-2.5 overflow-y-auto flex-1 pr-2">
@@ -143,26 +124,25 @@
     </section>
 
     <!-- 3. 식단표 -->
-    <section class="glass-panel p-6 flex flex-col relative overflow-hidden">
-      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
-      <div class="flex items-center justify-between mb-6 pb-4 border-b border-white/5 relative z-10">
-        <h2 class="text-xl font-black text-white flex items-center gap-3">
+    <section class="bg-[#1E293B] p-6 rounded-2xl border border-slate-700/50 shadow-lg flex flex-col h-[420px]">
+      <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-700/80">
+        <h2 class="text-lg font-black text-white flex items-center gap-2">
           <i class="fa-solid fa-utensils text-emerald-400"></i> 식단
         </h2>
-        <span class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/20">
+        <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
           교육부 NEIS 실시간
         </span>
       </div>
-      <div id="meal-content" class="flex-1 space-y-4 relative z-10">
+      <div id="meal-content" class="flex-1 space-y-3 overflow-y-auto pr-2">
         <div class="text-center text-slate-500 text-sm py-10">급식 정보를 불러오는 중입니다...</div>
       </div>
       <!-- 식단 날짜 컨트롤러 -->
-      <div class="mt-4 pt-4 border-t border-white/5 flex items-center justify-between relative z-10">
+      <div class="mt-4 pt-3 border-t border-slate-700/80 flex items-center justify-between">
         <span id="meal-date-display" class="text-xs font-bold text-slate-400">날짜 연동 중...</span>
         <div class="flex gap-2">
-          <button onclick="changeMealDate(-1)" class="px-3 py-1.5 rounded-lg bg-dark-card hover:bg-white/10 text-xs font-bold text-slate-300 transition"><i class="fa-solid fa-chevron-left mr-1"></i>어제</button>
-          <button onclick="resetMealDate()" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-xs font-bold transition">오늘</button>
-          <button onclick="changeMealDate(1)" class="px-3 py-1.5 rounded-lg bg-dark-card hover:bg-white/10 text-xs font-bold text-slate-300 transition">내일<i class="fa-solid fa-chevron-right ml-1"></i></button>
+          <button onclick="changeMealDate(-1)" class="px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition"><i class="fa-solid fa-chevron-left mr-1"></i>어제</button>
+          <button onclick="resetMealDate()" class="px-2.5 py-1 rounded text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition">오늘</button>
+          <button onclick="changeMealDate(1)" class="px-2.5 py-1 rounded text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition">내일<i class="fa-solid fa-chevron-right ml-1"></i></button>
         </div>
       </div>
     </section>
@@ -170,41 +150,38 @@
   </main>
 
   <!-- ================= BOTTOM PANELS ================= -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
     <!-- 공지사항 -->
-    <section class="lg:col-span-2 glass-panel p-6">
+    <section class="lg:col-span-2 bg-[#1E293B] p-6 rounded-2xl border border-slate-700/50 shadow-lg">
       <h2 class="text-lg font-black text-white mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-bullhorn text-brand-400"></i> 공지 사항
+        <i class="fa-solid fa-bullhorn text-sky-400"></i> 공지 사항
       </h2>
-      <div id="notice-list" class="space-y-3">
-        <div class="text-slate-500 text-sm">공지사항을 불러오는 중...</div>
+      <div id="notice-list" class="space-y-2">
+        <div class="text-slate-500 text-sm text-center py-4">공지사항을 불러오는 중...</div>
       </div>
     </section>
 
     <!-- 주요 일정 -->
-    <section class="glass-panel p-6">
+    <section class="bg-[#1E293B] p-6 rounded-2xl border border-slate-700/50 shadow-lg">
       <h2 class="text-lg font-black text-white mb-4 flex items-center gap-2">
         <i class="fa-solid fa-calendar-check text-amber-400"></i> 주요 일정
       </h2>
-      <div id="dday-list" class="space-y-3">
-        <div class="text-slate-500 text-sm">일정을 불러오는 중...</div>
+      <div id="dday-list" class="space-y-2">
+        <div class="text-slate-500 text-sm text-center py-4">일정을 불러오는 중...</div>
       </div>
     </section>
   </div>
 
   <!-- ================= SCRIPTS ================= -->
   <script>
-    /* =====================================================================
-       환경 변수 및 전역 상태
-       ===================================================================== */
     const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1yfOSkEkHqoWG2bRLj10Wd0ns9M_Rs8n9KxP7VNthyto/gviz/tq?tqx=out:json";
     let currentDayName = '월';
     let mealDateOffset = 0; // 0=오늘, -1=어제, 1=내일
 
-    /* =====================================================================
+    /* -------------------------------------------------------------------------
        유틸리티 함수
-       ===================================================================== */
-    // 선생님 호칭 자동 완성 함수
+       ------------------------------------------------------------------------- */
+    // 선생님 호칭 자동 완성 함수 (이름만 있으면 ' 선생님' 추가)
     function formatTeacher(name) {
       if (!name) return "";
       name = name.trim();
@@ -214,43 +191,33 @@
       return name + " 선생님";
     }
 
-    // 시간표 카드 UI 생성 헬퍼
-    function buildClassCard(period, subject, teacher) {
-      let icon = "fa-book";
-      if(subject.includes("기계") || subject.includes("도면") || subject.includes("가공")) icon = "fa-gear";
-      if(subject.includes("항공") || subject.includes("정비")) icon = "fa-plane";
-      if(subject.includes("체육")) icon = "fa-basketball";
-      if(subject.includes("TOEIC") || subject.includes("영어")) icon = "fa-language";
+    // 선생님이 원하셨던 다크네이비 솔리드 카드 디자인 (왼쪽 두꺼운 띠)
+    function buildClassCard(period, subject, teacher, isAfterschool = false) {
+      const borderColor = isAfterschool ? 'border-amber-400' : 'border-sky-400';
+      const periodColor = isAfterschool ? 'text-amber-400' : 'text-sky-400';
 
       return `
-        <div class="glass-card p-3 md:p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between group">
-          <div class="flex items-center gap-3 md:gap-4 mb-2 md:mb-0">
-            <span class="bg-brand-500/20 border border-brand-500/30 text-brand-300 text-xs font-black px-2.5 py-1.5 rounded-lg shrink-0 shadow-[0_0_10px_rgba(14,165,233,0.2)]">
-              ${period}교시
-            </span>
-            <span class="text-sm md:text-base font-extrabold text-white group-hover:text-brand-300 transition-colors flex items-center gap-2">
-              <i class="fa-solid ${icon} text-slate-500 text-xs"></i> ${subject}
-            </span>
+        <div class="flex items-center justify-between bg-[#131B2F] p-3.5 px-4 rounded-xl border-l-[5px] ${borderColor} shadow-sm">
+          <div class="flex items-center gap-4">
+            <span class="${periodColor} font-bold w-12 text-center text-[15px] shrink-0">${period}교시</span>
+            <span class="text-white font-bold text-[15px] leading-tight">${subject}</span>
           </div>
-          <span class="text-xs md:text-sm font-bold text-slate-400 shrink-0 bg-dark-card/50 px-3 py-1 rounded-md border border-white/5">
-            ${teacher}
-          </span>
+          <span class="text-slate-400 text-sm font-medium shrink-0 ml-4">${teacher}</span>
         </div>
       `;
     }
 
-    // 뱃지 상태 업데이트
     function updateStatusBadge(id, text, bgClass, textClass) {
       const el = document.getElementById(id);
       if(el) {
         el.textContent = text;
-        el.className = `px-3 py-1 rounded-lg text-xs font-bold ${bgClass} ${textClass} border border-current/20`;
+        el.className = `px-2.5 py-1 rounded-md text-[11px] font-bold ${bgClass} ${textClass} border border-current/20`;
       }
     }
 
-    /* =====================================================================
+    /* -------------------------------------------------------------------------
        시계 및 요일 탭 관리
-       ===================================================================== */
+       ------------------------------------------------------------------------- */
     function updateClock() {
       const now = new Date();
       let h = String(now.getHours()).padStart(2, '0');
@@ -263,62 +230,30 @@
       let mo = String(now.getMonth() + 1).padStart(2, '0');
       let d = String(now.getDate()).padStart(2, '0');
       let dayName = days[now.getDay()];
-      document.getElementById('date').innerHTML = `${y}년 ${mo}월 ${d}일 <span class="text-white ml-1 font-black">${dayName}요일</span>`;
+      document.getElementById('date').innerHTML = `${y}.${mo}.${d} (${dayName})요일`;
     }
     setInterval(updateClock, 1000);
 
     function selectDay(dayName) {
       currentDayName = dayName;
-      // 탭 스타일 리셋
       document.querySelectorAll('.day-tab').forEach(btn => {
-        btn.classList.remove('bg-brand-500', 'text-white', 'shadow-lg', 'shadow-brand-500/30');
-        btn.classList.add('text-slate-400');
+        btn.className = "day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition";
       });
-      // 선택된 탭 하이라이트
       const selectedBtn = document.getElementById(`tab-${dayName}`);
       if(selectedBtn) {
-        selectedBtn.classList.remove('text-slate-400');
-        selectedBtn.classList.add('bg-brand-500', 'text-white', 'shadow-lg', 'shadow-brand-500/30');
+        selectedBtn.className = "day-tab w-10 py-1.5 rounded-lg text-sm font-bold text-white bg-sky-500 shadow-md";
       }
       
-      // 데이터 로드
       loadRegularTimetable(dayName);
       loadAfterschoolTimetable(dayName);
     }
 
-    /* =====================================================================
-       1. 정규 수업 로드 (컴시간 -> 구글시트 백업)
-       ===================================================================== */
+    /* -------------------------------------------------------------------------
+       1. 정규 수업 로드 (JSON 기반 3중 방어 파싱)
+       ------------------------------------------------------------------------- */
     async function loadRegularTimetable(dayName) {
       document.getElementById('regular-timetable-list').innerHTML = `<div class="text-center text-slate-500 text-sm py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>시간표 불러오는 중...</div>`;
       
-      // 1순위: 파이썬(컴시간) 서버 시도
-      try {
-        const res = await fetch("http://localhost:5000/api/timetable?grade=2&class=2");
-        if(res.ok) {
-          const data = await res.json();
-          if(data.success && data.timetable && data.timetable[dayName]) {
-            let html = '';
-            let hasData = false;
-            data.timetable[dayName].forEach(item => {
-              // 자율활동 억지 채우기 차단
-              if(item.subject && !item.subject.includes('자율') && !item.subject.includes('창체')) {
-                html += buildClassCard(item.period, item.subject, formatTeacher(item.teacher));
-                hasData = true;
-              }
-            });
-            if(hasData) {
-              document.getElementById('regular-timetable-list').innerHTML = html;
-              updateStatusBadge('regular-status', '컴시간알리미', 'bg-sky-500/20', 'text-sky-300');
-              return; // 성공 시 종료
-            }
-          }
-        }
-      } catch (e) {
-        console.log("컴시간 접속 실패, 구글 시트로 전환합니다.");
-      }
-
-      // 2순위: 구글 시트 백업 파싱 (JSON)
       try {
         const res = await fetch(GOOGLE_SHEET_URL);
         const text = await res.text();
@@ -329,14 +264,14 @@
         let headerRow = -1;
         let colIdx = -1;
 
-        // 1. 헤더에서 '금'과 정확히 일치하는 열 찾기 (금속 방지)
-        for (let r = 0; r < Math.min(rows.length, 10); r++) {
+        // [중요] 1. '금속' 등 글자 포함 오류 방지를 위해 정확히 일치(===)하는 열만 찾기
+        for (let r = 0; r < Math.min(rows.length, 5); r++) {
           if (!rows[r] || !rows[r].c) continue;
           for (let c = 0; c < rows[r].c.length; c++) {
             let cell = rows[r].c[c];
             if (cell && (cell.v || cell.f)) {
-              let val = String(cell.v || cell.f).replace(/\s+/g, '');
-              // === 완벽 일치 연산자 사용 ===
+              let val = String(cell.v || cell.f).replace(/\s+/g, ''); // 공백 제거
+              // 정확한 일치 검사!
               if (val === dayName || val === dayName + '요일') {
                 headerRow = r;
                 colIdx = c;
@@ -347,14 +282,14 @@
           if (colIdx !== -1) break;
         }
 
-        // 헤더 못 찾았을 경우 강제 매핑
+        // 헤더를 못 찾았을 경우 A열~E열 강제 매핑
         if (colIdx === -1) {
-          const fallback = {'월':1, '화':2, '수':3, '목':4, '금':5};
-          colIdx = fallback[dayName] || 1;
+          const fallback = {'월':0, '화':1, '수':2, '목':3, '금':4}; // 0부터 시작
+          colIdx = fallback[dayName] !== undefined ? fallback[dayName] : 0;
           headerRow = 0;
         }
 
-        // 2. 1교시가 시작되는 진짜 '행(Row)' 번호 동적 추적 (빈 줄 무시)
+        // 2. A열을 뒤져서 '1교시'가 시작되는 진짜 첫 번째 줄 찾기
         let startRow = headerRow + 1;
         for (let r = headerRow + 1; r < Math.min(rows.length, headerRow + 5); r++) {
           if(rows[r] && rows[r].c && rows[r].c[0]) {
@@ -369,7 +304,7 @@
         let html = '';
         let hasData = false;
         
-        // 3. 1교시부터 7교시까지 읽기
+        // 3. 1교시부터 7교시까지 순차적으로 긁어오기
         for (let period = 1; period <= 7; period++) {
           let rowIdx = startRow + period - 1;
           if (rowIdx < rows.length && rows[rowIdx] && rows[rowIdx].c) {
@@ -378,8 +313,8 @@
               if (cell && (cell.v || cell.f)) {
                 let val = String(cell.v || cell.f).trim();
                 
-                // 자율활동 억지 채우기 차단
-                if (val && !val.includes('자율') && !val.includes('창체')) {
+                // [중요] 가짜 수업(자율, 창체, 하이픈) 완벽 차단!
+                if (val && !val.includes('자율') && !val.includes('창체') && val !== '-') {
                   let subject = val;
                   let teacher = "";
                   if (subject.includes("(")) {
@@ -387,7 +322,7 @@
                     subject = parts[0].trim();
                     teacher = formatTeacher(parts[1].replace(")", "").trim());
                   }
-                  html += buildClassCard(period, subject, teacher);
+                  html += buildClassCard(period, subject, teacher, false);
                   hasData = true;
                 }
               }
@@ -397,24 +332,24 @@
         
         if(hasData) {
           document.getElementById('regular-timetable-list').innerHTML = html;
-          updateStatusBadge('regular-status', '저장된 시간표', 'bg-amber-500/20', 'text-amber-300');
+          updateStatusBadge('regular-status', '저장된 시간표', 'bg-amber-500/20', 'text-amber-400');
         } else {
-          document.getElementById('regular-timetable-list').innerHTML = `<div class="glass-card p-4 rounded-xl text-center text-sm font-bold text-slate-400">등록된 수업이 없습니다.</div>`;
-          updateStatusBadge('regular-status', '데이터 없음', 'bg-slate-500/20', 'text-slate-400');
+          document.getElementById('regular-timetable-list').innerHTML = `<div class="p-4 rounded-xl text-center text-sm font-bold text-slate-400 bg-slate-900/50 border border-slate-700/50">등록된 수업이 없습니다.</div>`;
+          updateStatusBadge('regular-status', '데이터 없음', 'bg-slate-700', 'text-slate-400');
         }
       } catch (e) {
-        document.getElementById('regular-timetable-list').innerHTML = `<div class="text-rose-400 text-sm py-4">데이터를 불러오지 못했습니다.</div>`;
+        document.getElementById('regular-timetable-list').innerHTML = `<div class="text-rose-400 text-sm py-4 text-center font-bold">시간표를 불러오지 못했습니다. 시트 접근 권한을 확인하세요.</div>`;
         updateStatusBadge('regular-status', '연결 실패', 'bg-rose-500/20', 'text-rose-400');
       }
     }
 
-    /* =====================================================================
-       2. 방과후학교 로드 (월요일 고정 + 화수목금 시트 연동)
-       ===================================================================== */
+    /* -------------------------------------------------------------------------
+       2. 방과후학교 로드 (금요일 6~8교시 격주 완벽 지원)
+       ------------------------------------------------------------------------- */
     async function loadAfterschoolTimetable(dayName) {
       if (dayName === '월') {
-        document.getElementById('afterschool-timetable-list').innerHTML = buildClassCard(8, "TOEIC / 한국사", formatTeacher("지도교사"));
-        updateStatusBadge('afterschool-status', '월요일 고정', 'bg-indigo-500/20', 'text-indigo-300');
+        document.getElementById('afterschool-timetable-list').innerHTML = buildClassCard(8, "TOEIC / 한국사", formatTeacher("지도교사"), true);
+        updateStatusBadge('afterschool-status', '월요일 고정', 'bg-indigo-500/20', 'text-indigo-400');
         return;
       }
 
@@ -428,49 +363,54 @@
         let html = '';
         let hasData = false;
 
-        // 금요일 격주 방과후 (6~8교시) 로직
+        // 금요일 격주(주차별) 방과후 로직 적용!
         if (dayName === '금') {
-          // 1. 이번 달의 주차 계산 (1, 2, 3, 4, 5)
           let todayDate = new Date();
+          // 이번 달의 몇 주차인지 계산 (1일~7일: 1주차)
           let weekOfMonth = Math.ceil(todayDate.getDate() / 7);
+          if(weekOfMonth > 5) weekOfMonth = 5;
           
-          // 2. 선생님 공식: 1주차(9행), 2주차(25행), 3주차(41행)... 16칸씩 건너뜀
+          // 공식: 1주(9행), 2주(25행), 3주(41행), 4주(57행), 5주(73행)
           let startRowIdx = 9 + (weekOfMonth - 1) * 16; 
           
-          // 3. 금요일 열(Column) 인덱스 찾기 (완벽 일치)
-          let colIdx = 5; // 기본값 F열
-          for(let c=0; c < rows[0].c.length; c++) {
+          // 금요일 열 인덱스 정확히 찾기 (금속 방지)
+          let colIdx = -1;
+          for(let c = 0; c < rows[0].c.length; c++) {
             if(rows[0].c[c] && rows[0].c[c].v) {
-              let headerVal = String(rows[0].c[c].v).replace(/\s+/g,'');
-              if(headerVal === '금' || headerVal === '금요일') {
-                colIdx = c; break;
-              }
+              let val = String(rows[0].c[c].v).replace(/\s+/g,'');
+              if(val === '금' || val === '금요일') { colIdx = c; break; }
             }
           }
+          if(colIdx === -1) colIdx = 4; // 기본값 E열
 
-          // 4. 6교시 위치(startRowIdx)에 데이터가 있는지 확인
-          if (startRowIdx < rows.length && rows[startRowIdx] && rows[startRowIdx].c[colIdx] && rows[startRowIdx].c[colIdx].v) {
-            // 데이터가 있으면 3줄(6, 7, 8교시) 읽어옴
-            for (let i = 0; i < 3; i++) {
-              let r = startRowIdx + i;
-              if (r < rows.length && rows[r] && rows[r].c[colIdx]) {
-                let val = String(rows[r].c[colIdx].v || '').trim();
-                if (val && !val.includes('자율')) {
-                  html += buildClassCard(6 + i, val, formatTeacher("지도교사"));
-                  hasData = true;
-                }
-              }
-            }
+          // 6교시 칸(startRowIdx)에 실제 수업 데이터가 있는지 검사 (자율 제외)
+          if (startRowIdx < rows.length && rows[startRowIdx] && rows[startRowIdx].c[colIdx]) {
+             let val6 = String(rows[startRowIdx].c[colIdx].v || '').trim();
+             
+             if (val6 && !val6.includes('자율') && !val6.includes('창체')) {
+                 // 6교시 데이터가 존재하므로 6,7,8교시 연속 출력
+                 for (let i = 0; i < 3; i++) {
+                     let r = startRowIdx + i;
+                     if (r < rows.length && rows[r] && rows[r].c[colIdx]) {
+                         let subject = String(rows[r].c[colIdx].v || '').trim();
+                         // 빈칸 및 자율 제외
+                         if (subject && !subject.includes('자율') && !subject.includes('창체')) {
+                             html += buildClassCard(6 + i, subject, formatTeacher("지도교사"), true);
+                             hasData = true;
+                         }
+                     }
+                 }
+             }
           }
 
           if (!hasData) {
-            html = `<div class="glass-card p-4 rounded-xl text-center text-sm font-bold text-slate-400">수업 없음 (방과후 미운영)</div>`;
+            html = `<div class="p-4 rounded-xl text-center text-sm font-bold text-slate-400 bg-slate-900/50 border border-slate-700/50">수업 없음 (방과후 미운영)</div>`;
           }
           document.getElementById('afterschool-timetable-list').innerHTML = html;
-          updateStatusBadge('afterschool-status', `${weekOfMonth}주차 방과후`, 'bg-amber-500/20', 'text-amber-300');
+          updateStatusBadge('afterschool-status', `${weekOfMonth}주차 방과후`, 'bg-amber-500/20', 'text-amber-400');
         
         } else {
-          // 화, 수, 목 일반 방과후 로직 (7행 밑에 있다고 가정하고 스캔)
+          // 화, 수, 목 일반 방과후 로직
           let colIdx = -1;
           for (let c = 0; c < rows[0].c.length; c++) {
             let val = rows[0].c[c] ? String(rows[0].c[c].v||'').replace(/\s+/g,'') : '';
@@ -478,12 +418,11 @@
           }
           
           if (colIdx !== -1) {
-            // 정규수업 밑(대략 8행~10행)을 스캔
-            for (let r = 8; r <= 10; r++) {
+            for (let r = 8; r <= 11; r++) {
               if (r < rows.length && rows[r] && rows[r].c[colIdx]) {
                 let val = String(rows[r].c[colIdx].v||'').trim();
-                if (val && !val.includes('자율')) {
-                  html += buildClassCard(r, val, formatTeacher("지도교사"));
+                if (val && !val.includes('자율') && !val.includes('창체')) {
+                  html += buildClassCard(r, val, formatTeacher("지도교사"), true);
                   hasData = true;
                 }
               }
@@ -493,25 +432,19 @@
           if(hasData) {
             document.getElementById('afterschool-timetable-list').innerHTML = html;
           } else {
-            document.getElementById('afterschool-timetable-list').innerHTML = `<div class="glass-card p-4 rounded-xl text-center text-sm font-bold text-slate-400">등록된 방과후가 없습니다.</div>`;
+            document.getElementById('afterschool-timetable-list').innerHTML = `<div class="p-4 rounded-xl text-center text-sm font-bold text-slate-400 bg-slate-900/50 border border-slate-700/50">등록된 방과후가 없습니다.</div>`;
           }
         }
       } catch(e) {
-        document.getElementById('afterschool-timetable-list').innerHTML = `<div class="text-rose-400 text-sm py-4">방과후 데이터를 불러오지 못했습니다.</div>`;
+        document.getElementById('afterschool-timetable-list').innerHTML = `<div class="text-rose-400 text-sm py-4 text-center">데이터를 불러오지 못했습니다.</div>`;
       }
     }
 
-    /* =====================================================================
-       3. 교육부 NEIS 급식 로드
-       ===================================================================== */
-    function resetMealDate() {
-      mealDateOffset = 0;
-      loadMeal();
-    }
-    function changeMealDate(offset) {
-      mealDateOffset += offset;
-      loadMeal();
-    }
+    /* -------------------------------------------------------------------------
+       3. 교육부 NEIS 급식 로드 (선생님 요청 디자인 유지)
+       ------------------------------------------------------------------------- */
+    function resetMealDate() { mealDateOffset = 0; loadMeal(); }
+    function changeMealDate(offset) { mealDateOffset += offset; loadMeal(); }
     
     async function loadMeal() {
       const targetDate = new Date();
@@ -525,7 +458,6 @@
       const days = ['일', '월', '화', '수', '목', '금', '토'];
       const displayStr = `${yyyy}.${mm}.${dd} (${days[targetDate.getDay()]})`;
       document.getElementById('meal-date-display').textContent = displayStr;
-      
       document.getElementById('meal-content').innerHTML = `<div class="text-center text-slate-500 text-sm py-10"><i class="fa-solid fa-spinner fa-spin mr-2"></i>급식 정보를 가져오는 중...</div>`;
 
       try {
@@ -537,17 +469,17 @@
           let html = '';
           data.mealServiceDietInfo[1].row.forEach(meal => {
             let mealType = meal.MMEAL_SC_NM;
-            let icon = mealType.includes("중식") ? "fa-sun text-amber-400" : (mealType.includes("석식") ? "fa-moon text-indigo-400" : "fa-mug-hot text-emerald-400");
+            let icon = mealType.includes("중식") ? "☀️ text-amber-400" : (mealType.includes("석식") ? "🌙 text-indigo-400" : "🌅 text-emerald-400");
             
             // 알러지 번호 및 특수문자 제거, 줄바꿈 처리
             let menuClean = meal.DDISH_NM.replace(/[0-9.]/g, '').replace(/\*/g, '').replace(/<br\/>/g, '<br>');
             
             html += `
-              <div class="glass-card p-4 rounded-xl">
-                <div class="text-xs font-black text-white mb-3 flex items-center gap-2">
-                  <i class="fa-solid ${icon}"></i> ${mealType}
+              <div class="bg-[#131B2F] p-4 rounded-xl border border-slate-700/50 shadow-sm">
+                <div class="text-xs font-black text-white mb-2.5 flex items-center gap-1.5">
+                  <span class="${icon.split(' ')[1]}">${icon.split(' ')[0]}</span> ${mealType}
                 </div>
-                <div class="text-sm text-slate-300 leading-relaxed font-medium">
+                <div class="text-sm text-slate-300 leading-relaxed font-medium pl-1">
                   ${menuClean}
                 </div>
               </div>
@@ -555,16 +487,16 @@
           });
           document.getElementById('meal-content').innerHTML = html;
         } else {
-          document.getElementById('meal-content').innerHTML = `<div class="glass-card p-6 rounded-xl text-center text-slate-400 font-bold"><i class="fa-solid fa-plate-wheat text-3xl mb-3 block opacity-50"></i>이 날은 급식 정보가 없습니다.</div>`;
+          document.getElementById('meal-content').innerHTML = `<div class="bg-slate-900/50 p-6 rounded-xl text-center text-slate-400 font-bold border border-slate-700/50 mt-4">이 날은 급식 정보가 없습니다.</div>`;
         }
       } catch (e) {
-        document.getElementById('meal-content').innerHTML = `<div class="text-rose-400 text-sm py-4">급식 서버에 연결할 수 없습니다.</div>`;
+        document.getElementById('meal-content').innerHTML = `<div class="text-rose-400 text-sm py-4 text-center">급식 서버에 연결할 수 없습니다.</div>`;
       }
     }
 
-    /* =====================================================================
-       4. 공지사항 / 주요 일정 구글 시트 연동 (1행 제외)
-       ===================================================================== */
+    /* -------------------------------------------------------------------------
+       4. 공지사항 / 주요 일정 (헤더 출력 완벽 차단)
+       ------------------------------------------------------------------------- */
     async function fetchNotices() {
       try {
         const res = await fetch(GOOGLE_SHEET_URL);
@@ -574,23 +506,27 @@
         const rows = data.table.rows;
         
         let html = '';
-        // r = 1 부터 시작하여 헤더(row 0) 무조건 건너뜀
+        // r=1부터 시작하여 1행(헤더) 기본 제외. 추가로 type명 검증.
         for (let r = 1; r < rows.length; r++) {
           if (rows[r] && rows[r].c && rows[r].c[0]) {
-            let type = rows[r].c[0].v;
-            let content = rows[r].c[1] ? rows[r].c[1].v : '';
-            if (type && content) {
-              let badgeColor = type.includes("중요") ? "bg-rose-500/20 text-rose-300 border-rose-500/30" : "bg-sky-500/20 text-sky-300 border-sky-500/30";
+            let type = String(rows[r].c[0].v || '').trim();
+            let content = rows[r].c[1] ? String(rows[r].c[1].v || '').trim() : '';
+            
+            // [핵심] 헤더 텍스트(type, 구분, 내용 등) 필터링
+            if (!type || type.toLowerCase() === 'type' || type === '구분' || type === '분류') continue;
+            
+            if (content) {
+              let badgeColor = type.includes("중요") ? "bg-rose-500/20 text-rose-400 border-rose-500/30" : "bg-sky-500/20 text-sky-400 border-sky-500/30";
               html += `
-                <div class="glass-card p-3 rounded-xl flex items-start gap-3">
-                  <span class="px-2 py-1 text-[10px] font-black rounded border ${badgeColor} shrink-0 mt-0.5">${type}</span>
-                  <span class="text-sm font-medium text-slate-200 leading-relaxed">${content}</span>
+                <div class="bg-[#131B2F] p-3 rounded-xl flex items-center gap-3 border border-slate-700/50 shadow-sm">
+                  <span class="px-2 py-1 text-[11px] font-black rounded border ${badgeColor} shrink-0">${type}</span>
+                  <span class="text-[14px] font-medium text-slate-200">${content}</span>
                 </div>
               `;
             }
           }
         }
-        document.getElementById('notice-list').innerHTML = html || `<div class="text-slate-500 text-sm">등록된 공지사항이 없습니다.</div>`;
+        document.getElementById('notice-list').innerHTML = html || `<div class="text-slate-500 text-sm text-center py-2">등록된 공지사항이 없습니다.</div>`;
       } catch(e) { }
     }
 
@@ -603,46 +539,37 @@
         const rows = data.table.rows;
         
         let html = '';
-        // 여기도 1행 제외를 위해 H~I열(공지사항 옆이라 가정) 스캔
-        // 선생님 시트 구조상 D-Day가 몇 열인지 파악하기 어려우므로, 
-        // 일단 예시로 3,4열 (C,D열) 파싱한다고 가정. 1행(r=1)부터 시작!
         for (let r = 1; r < rows.length; r++) {
-          // 만약 C열(2), D열(3)에 일정이 있다면:
           if (rows[r] && rows[r].c && rows[r].c.length > 3 && rows[r].c[2] && rows[r].c[3]) {
-             let title = rows[r].c[2].v;
-             let dateVal = rows[r].c[3].v;
-             if(title && dateVal) {
-                // D-Day 계산 로직 생략(간략 표출)
+             let title = String(rows[r].c[2].v || '').trim();
+             let dateVal = String(rows[r].c[3].v || '').trim();
+             
+             // [핵심] 헤더 텍스트 필터링
+             if (!title || title.toLowerCase() === 'title' || title === '제목' || title === '일정') continue;
+             
+             if(dateVal) {
                 html += `
-                  <div class="glass-card p-3 rounded-xl flex items-center justify-between border-l-4 border-amber-500">
+                  <div class="bg-[#131B2F] p-3 rounded-xl flex items-center justify-between border-l-[4px] border-amber-400 shadow-sm mb-2">
                     <div>
                       <div class="text-sm font-bold text-white">${title}</div>
                       <div class="text-xs text-slate-400 mt-1">${dateVal}</div>
                     </div>
-                    <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs font-black rounded-lg">확인</span>
+                    <span class="px-2.5 py-1 bg-amber-500/20 text-amber-400 text-xs font-black rounded border border-amber-500/30">확인</span>
                   </div>
                 `;
              }
           }
         }
-        // D-Day 시트 구조를 몰라 예시로 띄웁니다. 만약 위 로직에 안 걸리면 임시 출력
         if(!html) {
-           html = `
-            <div class="glass-card p-4 rounded-xl flex items-center justify-between border-l-4 border-amber-500">
-              <div>
-                <div class="text-sm font-bold text-white">4회 기능사 필기</div>
-                <div class="text-xs text-slate-400 mt-1">2026-09-20</div>
-              </div>
-              <span class="px-2.5 py-1 bg-amber-500/20 text-amber-400 text-xs font-black rounded-lg border border-amber-500/30">D-17</span>
-            </div>`;
+           html = `<div class="text-slate-500 text-sm text-center py-2">등록된 일정이 없습니다.</div>`;
         }
         document.getElementById('dday-list').innerHTML = html;
       } catch(e) { }
     }
 
-    /* =====================================================================
-       초기 실행 (오늘 요일 찾기)
-       ===================================================================== */
+    /* -------------------------------------------------------------------------
+       초기 실행 (오늘 날짜 탭 자동 선택)
+       ------------------------------------------------------------------------- */
     window.onload = function() {
       updateClock();
       
@@ -650,7 +577,9 @@
       let todayName = days[new Date().getDay()];
       if (todayName === '일' || todayName === '토') todayName = '월'; // 주말엔 월요일 표시
       
+      // 첫 접속 시 오늘 요일 자동 포커스
       selectDay(todayName);
+      
       loadMeal();
       fetchNotices();
       fetchDDays();

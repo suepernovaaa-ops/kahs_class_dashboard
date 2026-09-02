@@ -537,11 +537,11 @@
               rows[i].c.forEach((cell, idx) => {
                 if (cell && (cell.v || cell.f)) {
                   let val = String(cell.v || cell.f).replace(/\s+/g, '');
-                  if(val.includes('월')) { tempMap['월'] = idx; count++; }
-                  else if(val.includes('화')) { tempMap['화'] = idx; count++; }
-                  else if(val.includes('수')) { tempMap['수'] = idx; count++; }
-                  else if(val.includes('목')) { tempMap['목'] = idx; count++; }
-                  else if(val.includes('금')) { tempMap['금'] = idx; count++; }
+                  if(val === '월' || val === '월요일') { tempMap['월'] = idx; count++; }
+                  else if(val === '화' || val === '화요일') { tempMap['화'] = idx; count++; }
+                  else if(val === '수' || val === '수요일') { tempMap['수'] = idx; count++; }
+                  else if(val === '목' || val === '목요일') { tempMap['목'] = idx; count++; }
+                  else if(val === '금' || val === '금요일') { tempMap['금'] = idx; count++; }
                 }
               });
               if (count >= 3) { colMap = tempMap; startRow = i + 1; break; }
@@ -854,10 +854,17 @@
         const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
         if (match) {
           const data = JSON.parse(match[1]);
-          notices = data.table.rows.map(row => ({
+          let parsedNotices = data.table.rows.map(row => ({
             tag: (row.c[0] && row.c[0].v) ? row.c[0].v : '공지',
             text: (row.c[1] && row.c[1].v) ? row.c[1].v : ''
           })).filter(n => n.text);
+          
+          // 1행(헤더) 필터링: tag가 'type'이거나 text가 'content'인 경우 1행 삭제
+          if (parsedNotices.length > 0 && (parsedNotices[0].tag.toLowerCase() === 'type' || parsedNotices[0].text.toLowerCase() === 'content')) {
+            parsedNotices.shift();
+          }
+          
+          notices = parsedNotices;
           renderNotices();
         }
       } catch (e) {
@@ -874,7 +881,7 @@
         const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
         if (match) {
           const data = JSON.parse(match[1]);
-          ddays = data.table.rows.map(row => {
+          let parsedDDays = data.table.rows.map(row => {
             let d = "";
             if (row.c[1]) {
               if (row.c[1].f) d = row.c[1].f; 
@@ -889,6 +896,13 @@
               date: d
             };
           }).filter(n => n.title && n.date);
+          
+          // 1행(헤더) 필터링: title이 'title'이나 '제목'인 경우 1행 삭제
+          if (parsedDDays.length > 0 && (parsedDDays[0].title.toLowerCase() === 'title' || parsedDDays[0].title === '제목')) {
+            parsedDDays.shift();
+          }
+          
+          ddays = parsedDDays;
           renderDDays();
         }
       } catch (e) {

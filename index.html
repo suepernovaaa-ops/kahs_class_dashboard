@@ -172,13 +172,11 @@
             <span>📅</span> 정규 수업
           </div>
           <div class="flex items-center gap-2">
-            <!-- 데이터 소스 뱃지 -->
             <span id="timetable-source-badge" class="text-[11px] px-2 py-0.5 rounded font-bold bg-slate-700 text-slate-300">
               로딩 중...
             </span>
           </div>
         </div>
-
         <div class="space-y-2 overflow-y-auto max-h-[420px] pr-1" id="regular-timetable-container">
           <div class="text-center py-10 text-slate-500 text-xs">시간표 데이터를 불러오는 중입니다...</div>
         </div>
@@ -198,7 +196,6 @@
             </a>
           </div>
         </div>
-
         <div class="space-y-2.5 overflow-y-auto max-h-[420px] pr-1" id="afterschool-timetable-container">
           <div class="text-center py-10 text-slate-500 text-xs">방과후 일정을 로딩 중입니다...</div>
         </div>
@@ -216,12 +213,10 @@
             <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">교육부 NEIS 실시간</span>
           </div>
         </div>
-
         <div class="space-y-3 overflow-y-auto max-h-[440px] pr-1" id="meals-container">
           <div class="text-center py-10 text-slate-500 text-xs">급식 정보를 불러오는 중입니다...</div>
         </div>
       </div>
-
       <div class="pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400 mt-2">
         <span id="meal-date-display" class="font-bold text-slate-300">날짜 연동 중...</span>
         <div class="flex gap-2">
@@ -278,7 +273,6 @@
         <div id="emergency-content" class="text-xl font-black text-white leading-relaxed tracking-tight px-2">알림 내용</div>
       </div>
       <div class="mt-6 flex justify-end">
-        <!-- 체크 해제 함수 연결 -->
         <button onclick="confirmAndClearAlert()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-sm shadow-lg transition">확인하였습니다</button>
       </div>
     </div>
@@ -308,7 +302,7 @@
     const BACKEND_SERVER_URL = "http://localhost:5000";
     const MAIN_SHEET_ID = '1Yn5KllO-wCu3eKRfTNaI-EzUl1b29pDXsgLQ03BrzAw';
 
-    // 💡 선생님의 웹훅 주소를 아래에 꼭 넣어주세요!
+    // 선생님의 구글 앱스 스크립트 배포 주소 (자동 체크 해제용)
     const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx4mkHOlwxTIMQ4hjp7tnrxh-58xKEYeBvAwTvCNCkvpb8uo_o3_e-i2rV2q7ROIjD8/exec"; 
 
     let audioChimeEnabled = true;
@@ -322,7 +316,7 @@
     let alertHistory = JSON.parse(localStorage.getItem('hk_alerts')) || [];
     let hasInitializedDay = false;
     let lastAlertId = null; 
-    let lastSheetAlertContent = ""; // 시트 알림 중복 방지
+    let lastSheetAlertContent = ""; 
 
     const PERIOD_TIMINGS = [
       { label: "아침 조례", start: "08:40", end: "08:50", type: "조례" },
@@ -373,7 +367,6 @@
       return { subject: text, teacher: '' };
     }
 
-    // 가짜 수업 차단 필터 (정상 과목은 무조건 통과)
     function isValidSubject(text) {
       if (!text) return false;
       const s = String(text).replace(/\s+/g, '');
@@ -400,17 +393,16 @@
       else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    // 확인 버튼 클릭 시 모달 닫기 + 시트 체크 해제 요청 (캐시 방지 적용)
+    // [수정완료] 브라우저 캐시 방지를 위해 &t= 타임스탬프 추가
     function confirmAndClearAlert() {
       closeModal('emergency-alert-modal');
       
       if (GAS_WEBHOOK_URL) {
-        // 브라우저 캐싱 방지를 위해 현재 시간 타임스탬프(&t=...) 추가
         const fetchUrl = GAS_WEBHOOK_URL.includes('?') 
           ? `${GAS_WEBHOOK_URL}&action=dismiss&t=${Date.now()}` 
           : `${GAS_WEBHOOK_URL}?action=dismiss&t=${Date.now()}`;
-          
-        fetch(fetchUrl, { method: 'GET', mode: 'no-cors', cache: 'no-cache' })
+        
+        fetch(fetchUrl, { mode: 'no-cors', cache: 'no-cache' })
           .catch(e => console.log('체크 해제 신호 전송 오류 방지'));
       }
     }
@@ -482,7 +474,7 @@
       }
     }
 
-    // 구글 시트 TRUE 체크박스 기반 호출 감지기 (숫자/문자 처리 완벽 반영)
+    // [수정완료] 숫자 타입도 무조건 문자열로 변환하여 팝업 내용으로 받아오는 로직 적용
     async function pollGoogleSheetAlerts() {
       const sheetNames = ['호출', 'alerts', 'notices', 'alram2622']; 
       let foundTrueThisTick = false;
@@ -504,38 +496,44 @@
               const row = rows[i];
               if (!row || !row.c) continue;
               
-              // 1. 헤더(1행) 건너뛰기
               if (i === 0 && row.c[0] && typeof row.c[0].v === 'string') {
                   const header = row.c[0].v.toLowerCase();
                   if (['type', 'title', '발신자', '선택', 'active'].includes(header)) continue;
               }
 
-              // 2. A열(0번째 인덱스)이 TRUE인지 확인
               let isTrueFound = false;
-              if (row.c[0] && (row.c[0].v === true || String(row.c[0].v).toUpperCase() === 'TRUE')) {
+              let sender = '교무실';
+              let content = '';
+
+              for (let j = 0; j < row.c.length; j++) {
+                const cell = row.c[j];
+                if (cell && (cell.v === true || String(cell.v).toUpperCase() === 'TRUE')) {
                   isTrueFound = true;
                   foundTrueThisTick = true;
+                  break;
+                }
               }
 
               if (isTrueFound) {
-                let sender = '교무실';
-                let content = '';
-
-                // 3. B열(1번째 인덱스) 가져오기 -> title (발신자/제목)
-                if (row.c[1] && row.c[1].v !== null && row.c[1].v !== undefined) {
-                    sender = String(row.c[1].v).trim();
+                let strings = [];
+                for (let j = 0; j < row.c.length; j++) {
+                  const cell = row.c[j];
+                  // TRUE/FALSE를 제외한 모든 데이터(숫자 포함)를 문자열로 변환하여 담습니다.
+                  if (cell && cell.v !== null && cell.v !== undefined && String(cell.v).toUpperCase() !== 'TRUE' && String(cell.v).toUpperCase() !== 'FALSE') {
+                    strings.push(String(cell.v));
+                  }
                 }
                 
-                // 4. C열(2번째 인덱스) 가져오기 -> text (알림 내용) - 숫자 888 등 완벽 반영
-                if (row.c[2] && row.c[2].v !== null && row.c[2].v !== undefined) {
-                    content = String(row.c[2].v).trim();
-                } else {
-                    // 혹시 C열(text)이 비어있다면 B열(title)의 내용을 팝업 내용으로 띄움
-                    content = sender;
-                    sender = '교무실';
+                if (sheetName === 'notices' && strings.length >= 2) {
+                   sender = strings[0];
+                   content = strings[1];
+                } else if (strings.length >= 2) {
+                   sender = strings[0];
+                   content = strings.slice(1).join(' ');
+                } else if (strings.length === 1) {
+                   content = strings[0];
                 }
                 
-                // 중복 방지 검증 후 팝업 띄우기
                 if (content && content !== lastSheetAlertContent) {
                   lastSheetAlertContent = content; 
                   showEmergencyAlert({
@@ -545,14 +543,13 @@
                     timestamp: new Date().toLocaleTimeString('ko-KR', { hour12: false })
                   });
                 }
-                return; // 팝업을 하나 띄웠으면 이번 회차는 종료
+                return; 
               }
             }
           }
         } catch (e) {}
       }
 
-      // 시트에서 수동으로 체크를 풀었을 경우 대비 초기화
       if (!foundTrueThisTick) {
         lastSheetAlertContent = "";
       }
@@ -598,6 +595,37 @@
       }
 
       updateLivePeriodStatus(now);
+    }
+
+    // [수정완료] 현재 진행 중인 수업 네온사인 강조 로직 적용 (나머지 어둡게 하지 않음!)
+    function highlightActiveTimetable(activePeriodNum) {
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      const todayName = dayNames[new Date().getDay()];
+
+      const allRegCards = document.querySelectorAll('[id^="period-card-reg-"]');
+      const allAftCards = document.querySelectorAll('[id^="period-card-aft-"]');
+
+      // 진행 중이 아닌 수업도 선명하게 유지!
+      const baseRegClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition";
+      const baseAftClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition";
+
+      allRegCards.forEach(card => { card.className = baseRegClass; });
+      allAftCards.forEach(card => { card.className = baseAftClass; });
+
+      const isTodayTab = (selectedDayName === todayName);
+      if (!isTodayTab || !activePeriodNum) return;
+
+      if (activePeriodNum <= 7) {
+        const activeCard = document.getElementById(`period-card-reg-${activePeriodNum}`);
+        if (activeCard) {
+          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 bg-sky-900/60 shadow-[0_0_15px_rgba(56,189,248,0.4)] ring-1 ring-sky-400/50 transition-all duration-300 transform scale-[1.02] z-10 opacity-100";
+        }
+      } else {
+        const activeCard = document.getElementById(`period-card-aft-${activePeriodNum}`);
+        if (activeCard) {
+          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 bg-amber-900/60 shadow-[0_0_15px_rgba(251,191,36,0.4)] ring-1 ring-amber-400/50 transition-all duration-300 transform scale-[1.02] z-10 opacity-100";
+        }
+      }
     }
 
     function updateLivePeriodStatus(now) {
@@ -654,35 +682,6 @@
       highlightActiveTimetable(currentActivePeriodNum);
     }
 
-    function highlightActiveTimetable(activePeriodNum) {
-      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-      const todayName = dayNames[new Date().getDay()];
-
-      const allRegCards = document.querySelectorAll('[id^="period-card-reg-"]');
-      const allAftCards = document.querySelectorAll('[id^="period-card-aft-"]');
-
-      const baseRegClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition";
-      const baseAftClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition";
-
-      allRegCards.forEach(card => { card.className = baseRegClass; });
-      allAftCards.forEach(card => { card.className = baseAftClass; });
-
-      const isTodayTab = (selectedDayName === todayName);
-      if (!isTodayTab || !activePeriodNum) return;
-
-      if (activePeriodNum <= 7) {
-        const activeCard = document.getElementById(`period-card-reg-${activePeriodNum}`);
-        if (activeCard) {
-          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 bg-sky-900/60 shadow-[0_0_15px_rgba(56,189,248,0.4)] ring-1 ring-sky-400/50 transition-all duration-300 transform scale-[1.02] z-10 opacity-100";
-        }
-      } else {
-        const activeCard = document.getElementById(`period-card-aft-${activePeriodNum}`);
-        if (activeCard) {
-          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 bg-amber-900/60 shadow-[0_0_15px_rgba(251,191,36,0.4)] ring-1 ring-amber-400/50 transition-all duration-300 transform scale-[1.02] z-10 opacity-100";
-        }
-      }
-    }
-
     function selectDay(dayName) {
       selectedDayName = dayName;
       
@@ -705,7 +704,7 @@
       fetchMealsForDate();
     }
 
-    // 5. 정규 시간표 로딩 (열 고정 완벽 반영)
+    // 5. 정규 시간표 로딩
     async function loadRegularTimetable() {
       const badge = document.getElementById('timetable-source-badge');
       if (badge) {
@@ -820,8 +819,6 @@
       const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(monthSheetName)}`;
 
       afterschoolTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
-
-      // 월요일 고정
       afterschoolTimetableData['월'] = [
         { period: 8, subject: 'TOEIC/한국사', teacher: '' },
         { period: 9, subject: 'TOEIC/한국사', teacher: '' },
@@ -927,6 +924,7 @@
       renderTimetables();
     }
 
+    // [수정완료] 강조 표시를 위해 HTML에 ID(period-card-...) 삽입
     function renderTimetables() {
       const regContainer = document.getElementById('regular-timetable-container');
       const aftContainer = document.getElementById('afterschool-timetable-container');
@@ -1008,6 +1006,7 @@
         });
     }
 
+    // [수정완료] 석식 자동 스크롤 로직 추가
     function renderMealCardsWithTiming(meals) {
       const container = document.getElementById('meals-container');
       if (!container || !meals) return;
@@ -1129,7 +1128,50 @@
       }
     }
 
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    // [복구완료] 공지사항 및 주요 일정 렌더링 함수
+    function renderNotices() {
+      const container = document.getElementById('notices-list');
+      if (!container) return;
+      if (notices.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">등록된 공지사항이 없습니다.</div>`;
+        return;
+      }
+      container.innerHTML = notices.map(item => `
+        <div class="glass-card p-3 flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3 flex-1 mr-2">
+            <span class="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 shrink-0">${item.tag}</span>
+            <span class="text-base text-white font-bold truncate">${item.text}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDDays() {
+      const container = document.getElementById('ddays-list');
+      if (!container) return;
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      if (ddays.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">등록된 일정이 없습니다.</div>`;
+        return;
+      }
+      container.innerHTML = ddays.map(item => {
+        const target = new Date(item.date);
+        target.setHours(0,0,0,0);
+        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        let dDayStr = diffDays === 0 ? "D-Day" : diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
+        return `
+          <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 mb-2.5">
+            <div>
+              <div class="text-base font-extrabold text-white">${item.title}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${item.date}</div>
+            </div>
+            <span class="text-sm font-black text-amber-300 font-mono px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">${dDayStr}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
     window.onload = function () {
       setInterval(updateClock, 1000);
       updateClock();

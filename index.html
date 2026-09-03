@@ -92,7 +92,8 @@
     }
   </style>
 </head>
-<body class="p-4 md:p-6 flex flex-col min-h-screen justify-between">
+<!-- 💡 여기서 왼쪽 여백(pl-[250px])과 오른쪽 여백(pr-[130px])을 주어 바탕화면 아이콘 공간을 강제로 비워둡니다! -->
+<body class="py-6 pl-[250px] pr-[130px] flex flex-col min-h-screen justify-between">
 
   <!-- Header Area -->
   <header class="glass-panel px-6 py-4 flex flex-wrap items-center justify-between gap-4 mb-5">
@@ -399,7 +400,7 @@
       else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    // [수정] 확인 버튼 클릭 시 모달 닫기 + 시트 체크 해제 요청 (캐시 방지 적용)
+    // 확인 버튼 클릭 시 모달 닫기 + 시트 체크 해제 요청 (캐시 방지 적용)
     function confirmAndClearAlert() {
       closeModal('emergency-alert-modal');
       
@@ -481,7 +482,7 @@
       }
     }
 
-    // [수정] 구글 시트 TRUE 체크박스 기반 호출 감지기 (숫자/문자 처리 완벽 반영)
+    // 구글 시트 TRUE 체크박스 기반 호출 감지기 (숫자/문자 처리 완벽 반영)
     async function pollGoogleSheetAlerts() {
       const sheetNames = ['호출', 'alerts', 'notices', 'alram2622']; 
       let foundTrueThisTick = false;
@@ -663,12 +664,8 @@
       const baseRegClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition";
       const baseAftClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition";
 
-      allRegCards.forEach(card => {
-          card.className = baseRegClass;
-      });
-      allAftCards.forEach(card => {
-          card.className = baseAftClass;
-      });
+      allRegCards.forEach(card => { card.className = baseRegClass; });
+      allAftCards.forEach(card => { card.className = baseAftClass; });
 
       const isTodayTab = (selectedDayName === todayName);
       if (!isTodayTab || !activePeriodNum) return;
@@ -1130,49 +1127,6 @@
       } catch (e) {
         document.getElementById('ddays-list').innerHTML = `<div class="text-xs text-rose-500 text-center py-4">일정 연동 실패</div>`;
       }
-    }
-
-    function renderNotices() {
-      const container = document.getElementById('notices-list');
-      if (!container) return;
-      if (notices.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">등록된 공지사항이 없습니다.</div>`;
-        return;
-      }
-      container.innerHTML = notices.map(item => `
-        <div class="glass-card p-3 flex items-center justify-between mb-2">
-          <div class="flex items-center gap-3 flex-1 mr-2">
-            <span class="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 shrink-0">${item.tag}</span>
-            <span class="text-base text-white font-bold truncate">${item.text}</span>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderDDays() {
-      const container = document.getElementById('ddays-list');
-      if (!container) return;
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      if (ddays.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-500 text-center py-4">등록된 일정이 없습니다.</div>`;
-        return;
-      }
-      container.innerHTML = ddays.map(item => {
-        const target = new Date(item.date);
-        target.setHours(0,0,0,0);
-        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-        let dDayStr = diffDays === 0 ? "D-Day" : diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
-        return `
-          <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400">
-            <div>
-              <div class="text-base font-extrabold text-white">${item.title}</div>
-              <div class="text-[10px] text-slate-400 mt-0.5">${item.date}</div>
-            </div>
-            <span class="text-sm font-black text-amber-300 font-mono px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">${dDayStr}</span>
-          </div>
-        `;
-      }).join('');
     }
 
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }

@@ -92,7 +92,6 @@
     }
   </style>
 </head>
-<!-- 💡 여기서 왼쪽 여백(pl-[250px])과 오른쪽 여백(pr-[130px])을 주어 바탕화면 아이콘 공간을 강제로 비워둡니다! -->
 <body class="py-6 pl-[250px] pr-[130px] flex flex-col min-h-screen justify-between">
 
   <!-- Header Area -->
@@ -302,7 +301,6 @@
     const BACKEND_SERVER_URL = "http://localhost:5000";
     const MAIN_SHEET_ID = '1Yn5KllO-wCu3eKRfTNaI-EzUl1b29pDXsgLQ03BrzAw';
 
-    // 선생님의 구글 앱스 스크립트 배포 주소 (자동 체크 해제용)
     const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx4mkHOlwxTIMQ4hjp7tnrxh-58xKEYeBvAwTvCNCkvpb8uo_o3_e-i2rV2q7ROIjD8/exec"; 
 
     let audioChimeEnabled = true;
@@ -393,7 +391,6 @@
       else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    // [수정완료] 브라우저 캐시 방지를 위해 &t= 타임스탬프 추가
     function confirmAndClearAlert() {
       closeModal('emergency-alert-modal');
       
@@ -440,6 +437,7 @@
       renderAlertHistory();
     }
 
+    // 💡 [수정된 알림음 로직 적용: 1초간 딩-동 소리]
     function showEmergencyAlert(alertData) {
       document.getElementById('emergency-sender').textContent = alertData.sender || '교무실';
       document.getElementById('emergency-content').textContent = alertData.content || '';
@@ -464,17 +462,28 @@
           const gain = ctx.createGain();
           osc.connect(gain);
           gain.connect(ctx.destination);
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, ctx.currentTime);
-          gain.gain.setValueAtTime(0.5, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-          osc.start();
-          osc.stop(ctx.currentTime + 1);
-        } catch(e) {}
+          
+          osc.type = 'sine'; // 맑고 부드러운 소리 파형
+          const now = ctx.currentTime;
+          
+          // '딩' 소리 (880Hz, 높은음)
+          osc.frequency.setValueAtTime(880, now);
+          gain.gain.setValueAtTime(0.8, now);
+          gain.gain.exponentialRampToValueAtTime(0.1, now + 0.4);
+          
+          // '동' 소리 (659.25Hz, 낮은음, 0.4초 뒤 재생)
+          osc.frequency.setValueAtTime(659.25, now + 0.4);
+          gain.gain.setValueAtTime(0.8, now + 0.4);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0); // 1초 지점에서 완전히 소멸
+          
+          osc.start(now);
+          osc.stop(now + 1.0);
+        } catch(e) {
+          console.log("브라우저 자동 재생 정책으로 인해 알림음이 재생되지 않았습니다. 화면을 한 번 클릭해주세요.");
+        }
       }
     }
 
-    // [수정완료] 숫자 타입도 무조건 문자열로 변환하여 팝업 내용으로 받아오는 로직 적용
     async function pollGoogleSheetAlerts() {
       const sheetNames = ['호출', 'alerts', 'notices', 'alram2622']; 
       let foundTrueThisTick = false;
@@ -518,7 +527,6 @@
                 let strings = [];
                 for (let j = 0; j < row.c.length; j++) {
                   const cell = row.c[j];
-                  // TRUE/FALSE를 제외한 모든 데이터(숫자 포함)를 문자열로 변환하여 담습니다.
                   if (cell && cell.v !== null && cell.v !== undefined && String(cell.v).toUpperCase() !== 'TRUE' && String(cell.v).toUpperCase() !== 'FALSE') {
                     strings.push(String(cell.v));
                   }
@@ -597,7 +605,6 @@
       updateLivePeriodStatus(now);
     }
 
-    // [수정완료] 현재 진행 중인 수업 네온사인 강조 로직 적용 (나머지 어둡게 하지 않음!)
     function highlightActiveTimetable(activePeriodNum) {
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       const todayName = dayNames[new Date().getDay()];
@@ -605,7 +612,6 @@
       const allRegCards = document.querySelectorAll('[id^="period-card-reg-"]');
       const allAftCards = document.querySelectorAll('[id^="period-card-aft-"]');
 
-      // 진행 중이 아닌 수업도 선명하게 유지!
       const baseRegClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition";
       const baseAftClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition";
 
@@ -924,7 +930,6 @@
       renderTimetables();
     }
 
-    // [수정완료] 강조 표시를 위해 HTML에 ID(period-card-...) 삽입
     function renderTimetables() {
       const regContainer = document.getElementById('regular-timetable-container');
       const aftContainer = document.getElementById('afterschool-timetable-container');
@@ -1006,7 +1011,6 @@
         });
     }
 
-    // [수정완료] 석식 자동 스크롤 로직 추가
     function renderMealCardsWithTiming(meals) {
       const container = document.getElementById('meals-container');
       if (!container || !meals) return;
@@ -1128,7 +1132,6 @@
       }
     }
 
-    // [복구완료] 공지사항 및 주요 일정 렌더링 함수
     function renderNotices() {
       const container = document.getElementById('notices-list');
       if (!container) return;

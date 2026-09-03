@@ -403,12 +403,10 @@
     function confirmAndClearAlert() {
       closeModal('emergency-alert-modal');
       
-      // 변수를 비워주어 다음번 알림 시 동일 내용이라도 바로 뜰 수 있게 함
-      lastSheetAlertContent = ""; 
-
       if (GAS_WEBHOOK_URL) {
-        // 구글 서버로 해제 신호 발송 (에러 무시)
-        fetch(GAS_WEBHOOK_URL, { mode: 'no-cors' }).catch(e => console.log('체크 해제 신호 전송 완료'));
+        // 선생님의 기존 스크립트 호환성을 위해 ?action=dismiss 파라미터 추가
+        const fetchUrl = GAS_WEBHOOK_URL.includes('?') ? `${GAS_WEBHOOK_URL}&action=dismiss` : `${GAS_WEBHOOK_URL}?action=dismiss`;
+        fetch(fetchUrl, { mode: 'no-cors' }).catch(e => console.log('체크 해제 신호 전송 완료'));
       }
     }
 
@@ -481,7 +479,8 @@
 
     // 구글 시트 TRUE 체크박스 기반 호출 감지기
     async function pollGoogleSheetAlerts() {
-      const sheetNames = ['호출', 'alerts', 'notices']; 
+      // 선생님의 알림 시트 이름(alram2622) 추가
+      const sheetNames = ['호출', 'alerts', 'notices', 'alram2622']; 
       let foundTrueThisTick = false;
       
       for (const sheetName of sheetNames) {

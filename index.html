@@ -916,7 +916,7 @@
              regContainer.innerHTML = regList.map(item => `
               <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition">
                 <span class="text-xs font-bold text-sky-300 w-14">${item.period}교시</span>
-                <span class="text-sm font-extrabold text-white flex-1 mx-2">${item.subject}</span>
+                <span class="text-lg font-black text-white flex-1 mx-2">${item.subject}</span>
                 <span class="text-xs text-slate-400">${item.teacher}</span>
               </div>
             `).join('');
@@ -932,7 +932,7 @@
            aftContainer.innerHTML = aftList.map(item => `
             <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition">
               <span class="text-xs font-bold text-amber-300 w-14">${item.period !== '-' ? item.period + '교시' : '-'}</span>
-              <span class="text-sm font-extrabold text-white flex-1 mx-2">${item.subject}</span>
+              <span class="text-lg font-black text-white flex-1 mx-2">${item.subject}</span>
               <span class="text-xs text-slate-400">${item.teacher || ''}</span>
             </div>
           `).join('');
@@ -1096,10 +1096,10 @@
         return;
       }
       container.innerHTML = notices.map(item => `
-        <div class="glass-card p-2.5 flex items-center justify-between text-xs mb-2">
-          <div class="flex items-center gap-2 flex-1 mr-2">
-            <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 shrink-0">${item.tag}</span>
-            <span class="text-white font-medium truncate">${item.text}</span>
+        <div class="glass-card p-3 flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3 flex-1 mr-2">
+            <span class="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 shrink-0">${item.tag}</span>
+            <span class="text-base text-white font-bold truncate">${item.text}</span>
           </div>
         </div>
       `).join('');
@@ -1122,8 +1122,8 @@
         return `
           <div class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400">
             <div>
-              <div class="text-xs font-bold text-white">${item.title}</div>
-              <div class="text-[10px] text-slate-400">${item.date}</div>
+              <div class="text-base font-extrabold text-white">${item.title}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${item.date}</div>
             </div>
             <span class="text-sm font-black text-amber-300 font-mono px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30">${dDayStr}</span>
           </div>
@@ -1131,7 +1131,7 @@
       }).join('');
     }
 
-    // 8. 초기화 실행 구간
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     window.onload = function () {
       setInterval(updateClock, 1000);
       updateClock();

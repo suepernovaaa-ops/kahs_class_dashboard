@@ -944,9 +944,9 @@
           } else {
              regContainer.innerHTML = regList.map(item => `
               <div id="period-card-reg-${item.period}" class="glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition">
-                <span class="text-xs font-bold text-sky-300 w-14">${item.period}교시</span>
-                <span class="text-lg font-black text-white flex-1 mx-2">${item.subject}</span>
-                <span class="text-xs text-slate-400">${item.teacher}</span>
+                <span class="text-xs font-bold text-sky-300 w-14 shrink-0">${item.period}교시</span>
+                <span class="text-lg font-black text-white flex-1 mx-2 truncate" title="${item.subject}">${item.subject}</span>
+                <span class="text-xs text-slate-400 shrink-0">${item.teacher}</span>
               </div>
             `).join('');
           }
@@ -960,9 +960,9 @@
         } else {
            aftContainer.innerHTML = aftList.map(item => `
             <div id="period-card-aft-${item.period}" class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition">
-              <span class="text-xs font-bold text-amber-300 w-14">${item.period !== '-' ? item.period + '교시' : '-'}</span>
-              <span class="text-lg font-black text-white flex-1 mx-2">${item.subject}</span>
-              <span class="text-xs text-slate-400">${item.teacher || ''}</span>
+              <span class="text-xs font-bold text-amber-300 w-14 shrink-0">${item.period !== '-' ? item.period + '교시' : '-'}</span>
+              <span class="text-lg font-black text-white flex-1 mx-2 truncate" title="${item.subject}">${item.subject}</span>
+              <span class="text-xs text-slate-400 shrink-0">${item.teacher || ''}</span>
             </div>
           `).join('');
         }

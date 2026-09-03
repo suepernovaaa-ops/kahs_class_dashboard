@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>한국항공고등학교 2학년 2반 스마트 대시보드</title>
+  <title>한국항공고등학교 2학년 2반 스마트대시보드</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -366,12 +366,16 @@
       return { subject: text, teacher: '' };
     }
 
-    // [핵심] 가짜 수업 차단 필터
+    // [핵심] 가짜 수업 차단 필터 수정
     function isValidSubject(text) {
       if (!text) return false;
       const s = String(text).replace(/\s+/g, '');
-      const invalidWords = ['자율', '자율활동', '창체', '창의적체험활동', '-', 'null', 'undefined', ''];
-      return !invalidWords.includes(s);
+      
+      // 선생님 지시사항 완벽 반영: '창체', '창의적체험활동', '자율활동' 등 실제 시트에 있는 과목은 지우지 않습니다.
+      // 오직 컴시간 서버가 빈 시간표를 채울 때 쓰는 "자율" 이라는 두 글자, 또는 아예 빈칸인 경우만 차단합니다.
+      const invalidWords = ['자율', '-', 'null', 'undefined', ''];
+      
+      return !invalidWords.includes(s) && s !== '';
     }
 
     // 3. 시계 및 라이브 상태 업데이트
@@ -510,7 +514,7 @@
         console.warn("컴시간 연동 실패, 구글 시트로 전환합니다.");
       }
       
-      // 2순위: 구글 시트 백업본 (JSON 파싱) - 선생님 지시대로 열 강제 지정
+      // 2순위: 구글 시트 백업본 (JSON 파싱)
       try {
         const sheetId = '1yfOSkEkHqoWG2bRLj10Wd0ns9M_Rs8n9KxP7VNthyto';
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&_nocache=${Date.now()}`;
@@ -527,11 +531,11 @@
             let tempData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
             tempData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
             
-            // [핵심] 선생님께서 지정하신 요일별 열 인덱스 강제 할당 (B=1, C=2, D=3, E=4, F=5)
-            const colMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5 };
-            
-            // 1~5행 내에서 A열(0)을 검사하여 '1교시' 또는 숫자 '1'이 있는 곳을 시작 줄(startRow)로 지정
+            // 선생님께서 지정하신 정규수업 열 고정 (월:B, 화:C, 수:D, 목:E, 금:F)
+            let colMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5 };
             let startRow = -1;
+
+            // '1' 또는 '1교시'가 적혀있는 행을 찾아서 시작점으로 설정
             for (let i = 0; i < Math.min(rows.length, 5); i++) {
               if (rows[i] && rows[i].c && rows[i].c[0]) {
                 const cellVal = String(rows[i].c[0].v || rows[i].c[0].f || '').replace(/\s+/g, '');
@@ -542,7 +546,7 @@
               }
             }
 
-            // 시작 줄을 찾지 못했다면 맨 윗줄(0)부터 데이터가 있다고 가정
+            // 시작 줄을 찾지 못했다면 첫 번째 줄부터 가져옴
             if (startRow === -1) {
               startRow = 0; 
             }
@@ -551,14 +555,14 @@
             for (let p = 1; p <= 7; p++) {
               let rIdx = startRow + (p - 1);
               ['월', '화', '수', '목', '금'].forEach(day => {
-                let cIdx = colMap[day]; // 검색하지 않고 무조건 지정된 열에서 가져옴
+                let cIdx = colMap[day];
                 let rawVal = "";
                 if (rIdx < rows.length && rows[rIdx] && rows[rIdx].c && rows[rIdx].c[cIdx]) {
                   let cell = rows[rIdx].c[cIdx];
                   rawVal = String(cell.v || cell.f || '').trim();
                 }
                 
-                // 가짜 수업(자율) 필터링
+                // 가짜 수업(더미 자율)만 필터링하고 실제 과목은 통과시킴
                 if (isValidSubject(rawVal)) {
                   let parsed = splitSubjectAndTeacher(rawVal);
                   if (isValidSubject(parsed.subject)) {

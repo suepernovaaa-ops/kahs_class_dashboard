@@ -307,7 +307,7 @@
     const BACKEND_SERVER_URL = "http://localhost:5000";
     const MAIN_SHEET_ID = '1Yn5KllO-wCu3eKRfTNaI-EzUl1b29pDXsgLQ03BrzAw';
 
-    // 💡 [중요] 구글 시트 체크박스 자동 해제를 위한 웹훅 주소 (2단계에서 발급받아 여기에 넣으세요)
+    // 💡 선생님의 웹훅 주소를 아래에 꼭 넣어주세요!
     const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx4mkHOlwxTIMQ4hjp7tnrxh-58xKEYeBvAwTvCNCkvpb8uo_o3_e-i2rV2q7ROIjD8/exec"; 
 
     let audioChimeEnabled = true;
@@ -399,14 +399,18 @@
       else if (document.exitFullscreen) document.exitFullscreen();
     }
 
-    // [신규] 확인 버튼 클릭 시 모달 닫기 + 시트 체크 해제 요청
+    // [수정] 확인 버튼 클릭 시 모달 닫기 + 시트 체크 해제 요청 (캐시 방지 적용)
     function confirmAndClearAlert() {
       closeModal('emergency-alert-modal');
       
       if (GAS_WEBHOOK_URL) {
-        // 선생님의 기존 스크립트 호환성을 위해 ?action=dismiss 파라미터 추가
-        const fetchUrl = GAS_WEBHOOK_URL.includes('?') ? `${GAS_WEBHOOK_URL}&action=dismiss` : `${GAS_WEBHOOK_URL}?action=dismiss`;
-        fetch(fetchUrl, { mode: 'no-cors' }).catch(e => console.log('체크 해제 신호 전송 완료'));
+        // 브라우저 캐싱 방지를 위해 현재 시간 타임스탬프(&t=...) 추가
+        const fetchUrl = GAS_WEBHOOK_URL.includes('?') 
+          ? `${GAS_WEBHOOK_URL}&action=dismiss&t=${Date.now()}` 
+          : `${GAS_WEBHOOK_URL}?action=dismiss&t=${Date.now()}`;
+          
+        fetch(fetchUrl, { method: 'GET', mode: 'no-cors', cache: 'no-cache' })
+          .catch(e => console.log('체크 해제 신호 전송 오류 방지'));
       }
     }
 
@@ -477,9 +481,8 @@
       }
     }
 
-    // 구글 시트 TRUE 체크박스 기반 호출 감지기
+    // [수정] 구글 시트 TRUE 체크박스 기반 호출 감지기 (숫자/문자 처리 완벽 반영)
     async function pollGoogleSheetAlerts() {
-      // 선생님의 알림 시트 이름(alram2622) 추가
       const sheetNames = ['호출', 'alerts', 'notices', 'alram2622']; 
       let foundTrueThisTick = false;
       
@@ -500,43 +503,38 @@
               const row = rows[i];
               if (!row || !row.c) continue;
               
+              // 1. 헤더(1행) 건너뛰기
               if (i === 0 && row.c[0] && typeof row.c[0].v === 'string') {
                   const header = row.c[0].v.toLowerCase();
-                  if (['type', 'title', '발신자', '선택'].includes(header)) continue;
+                  if (['type', 'title', '발신자', '선택', 'active'].includes(header)) continue;
               }
 
+              // 2. A열(0번째 인덱스)이 TRUE인지 확인
               let isTrueFound = false;
-              let sender = '교무실';
-              let content = '';
-
-              for (let j = 0; j < row.c.length; j++) {
-                const cell = row.c[j];
-                if (cell && (cell.v === true || String(cell.v).toUpperCase() === 'TRUE')) {
+              if (row.c[0] && (row.c[0].v === true || String(row.c[0].v).toUpperCase() === 'TRUE')) {
                   isTrueFound = true;
                   foundTrueThisTick = true;
-                  break;
-                }
               }
 
               if (isTrueFound) {
-                let strings = [];
-                for (let j = 0; j < row.c.length; j++) {
-                  const cell = row.c[j];
-                  if (cell && typeof cell.v === 'string' && String(cell.v).toUpperCase() !== 'TRUE' && String(cell.v).toUpperCase() !== 'FALSE') {
-                    strings.push(cell.v);
-                  }
+                let sender = '교무실';
+                let content = '';
+
+                // 3. B열(1번째 인덱스) 가져오기 -> title (발신자/제목)
+                if (row.c[1] && row.c[1].v !== null && row.c[1].v !== undefined) {
+                    sender = String(row.c[1].v).trim();
                 }
                 
-                if (sheetName === 'notices' && strings.length >= 2) {
-                   sender = strings[0];
-                   content = strings[1];
-                } else if (strings.length >= 2) {
-                   sender = strings[0];
-                   content = strings.slice(1).join(' ');
-                } else if (strings.length === 1) {
-                   content = strings[0];
+                // 4. C열(2번째 인덱스) 가져오기 -> text (알림 내용) - 숫자 888 등 완벽 반영
+                if (row.c[2] && row.c[2].v !== null && row.c[2].v !== undefined) {
+                    content = String(row.c[2].v).trim();
+                } else {
+                    // 혹시 C열(text)이 비어있다면 B열(title)의 내용을 팝업 내용으로 띄움
+                    content = sender;
+                    sender = '교무실';
                 }
                 
+                // 중복 방지 검증 후 팝업 띄우기
                 if (content && content !== lastSheetAlertContent) {
                   lastSheetAlertContent = content; 
                   showEmergencyAlert({
@@ -546,14 +544,14 @@
                     timestamp: new Date().toLocaleTimeString('ko-KR', { hour12: false })
                   });
                 }
-                return; 
+                return; // 팝업을 하나 띄웠으면 이번 회차는 종료
               }
             }
           }
         } catch (e) {}
       }
 
-      // 💡 시트에서 수동으로 체크를 풀었을 경우 대비 초기화
+      // 시트에서 수동으로 체크를 풀었을 경우 대비 초기화
       if (!foundTrueThisTick) {
         lastSheetAlertContent = "";
       }
@@ -601,7 +599,6 @@
       updateLivePeriodStatus(now);
     }
 
-    // [수정됨] 현재 교시 강조를 위해 활성화된 교시 숫자를 추적합니다.
     function updateLivePeriodStatus(now) {
       const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const dayIdx = now.getDay();
@@ -633,7 +630,7 @@
           else if (p.type === "저녁") { subjectText = "저녁 식사시간 🌙"; teacherText = "급식실"; }
           else {
             const pNum = parseInt(p.type);
-            currentActivePeriodNum = pNum; // 현재 교시 번호 저장
+            currentActivePeriodNum = pNum;
             if (pNum <= 7) {
               const item = (regularTimetableData[todayName] || []).find(i => i.period === pNum);
               if (item) { subjectText = item.subject; teacherText = item.teacher; }
@@ -653,11 +650,9 @@
         else { badge.textContent = "쉬는시간"; info.textContent = "다음 수업 교재를 준비해 주세요."; }
       }
 
-      // 강조 함수 호출
       highlightActiveTimetable(currentActivePeriodNum);
     }
 
-    // [신규] 진행 중인 시간표 카드 시각적 강조 함수 (어둡게 처리 제거)
     function highlightActiveTimetable(activePeriodNum) {
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       const todayName = dayNames[new Date().getDay()];
@@ -668,7 +663,6 @@
       const baseRegClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition";
       const baseAftClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition";
 
-      // 1. 모든 카드를 기본 상태로 초기화 (어둡게 처리 opacity-40 없음!)
       allRegCards.forEach(card => {
           card.className = baseRegClass;
       });
@@ -676,11 +670,9 @@
           card.className = baseAftClass;
       });
 
-      // 2. 오늘 요일 탭이 아니거나 진행 중인 교시가 없으면 여기서 종료
       const isTodayTab = (selectedDayName === todayName);
       if (!isTodayTab || !activePeriodNum) return;
 
-      // 3. 활성화된 카드 찾아서 네온 글로우 및 확대 효과만 부여
       if (activePeriodNum <= 7) {
         const activeCard = document.getElementById(`period-card-reg-${activePeriodNum}`);
         if (activeCard) {
@@ -766,7 +758,6 @@
             let tempData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
             tempData['토'] = Array.from({length: 7}, (_, i) => ({ period: i+1, subject: '-', teacher: '' }));
             
-            // 선생님 지시사항 반영: 열 번호를 완전히 고정 (월:B, 화:C, 수:D, 목:E, 금:F)
             let colMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5 }; 
             let startRow = -1;
 
@@ -939,7 +930,6 @@
       renderTimetables();
     }
 
-    // [수정됨] 강조 표시를 위해 HTML 카드 태그에 고유 ID 추가
     function renderTimetables() {
       const regContainer = document.getElementById('regular-timetable-container');
       const aftContainer = document.getElementById('afterschool-timetable-container');
@@ -983,7 +973,6 @@
         }
       }
       
-      // 시간표 렌더링 직후 현재 시간에 맞춰 강조 효과 즉시 적용
       updateLivePeriodStatus(new Date());
     }
 
@@ -1022,7 +1011,6 @@
         });
     }
 
-    // [수정됨] 렌더링 완료 후 석식 자동 스크롤 기능 적용
     function renderMealCardsWithTiming(meals) {
       const container = document.getElementById('meals-container');
       if (!container || !meals) return;
@@ -1062,7 +1050,6 @@
         </div>
       `;
 
-      // 스크롤 자동 조정 (석식이 켜져있으면 화면 맨 아래로, 아니면 맨 위로)
       setTimeout(() => {
         if (isDinnerActive) {
           container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });

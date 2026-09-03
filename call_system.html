@@ -54,7 +54,7 @@
     </footer>
 
     <script>
-        // 앱스스크립트 웹앱 URL
+        // 앱스스크립트 웹앱 URL (기존 주소 유지)
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4mkHOlwxTIMQ4hjp7tnrxh-58xKEYeBvAwTvCNCkvpb8uo_o3_e-i2rV2q7ROIjD8/exec";
 
         function showStatus(message, isSuccess = true) {
@@ -70,7 +70,7 @@
             }, 4000);
         }
 
-        // 안정적인 전송을 위해 동적 폼 제출(Hidden Form Submitting) 방식 사용 (CORS 완벽 우회)
+        // 기존 앱스스크립트와 호환되는 전송 방식 (동적 아이프레임 GET 요청)
         function sendCall() {
             const title = document.getElementById('input-title').value.trim();
             const text = document.getElementById('input-text').value.trim();
@@ -84,7 +84,7 @@
             submitBtn.disabled = true;
             showStatus("⏳ 대시보드로 호출을 전송 중입니다...", true);
 
-            // 가상의 아이프레임과 폼을 생성하여 백그라운드로 전송
+            // 기존 스크립트가 처리할 수 있는 파라미터 구조 반영
             let iframeName = 'hidden_iframe_' + new Date().getTime();
             let iframe = document.createElement('iframe');
             iframe.name = iframeName;
@@ -96,7 +96,7 @@
             form.method = 'GET';
             form.target = iframeName;
 
-            // 데이터 필드 추가 (active는 항상 true)
+            // 시트에 전달될 파라미터 설정
             let inputs = {
                 'active': 'true',
                 'title': title,
@@ -114,11 +114,9 @@
             document.body.appendChild(form);
             form.submit();
 
-            // 전송 완료 처리 (아이프레임 특성상 즉시 완료 알림)
             setTimeout(() => {
                 showStatus(`✅ 성공적으로 호출되었습니다! [${title} / ${text}]`, true);
                 submitBtn.disabled = false;
-                // 정리
                 document.body.removeChild(form);
                 document.body.removeChild(iframe);
             }, 1000);

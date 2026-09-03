@@ -522,7 +522,57 @@
                 let strings = [];
                 for (let j = 0; j < row.c.length; j++) {
                   const cell = row.c[j];
-    // 3. 시계 및 라이브 상태 업데이트
+                  if (cell && typeof cell.v === 'string' && String(cell.v).toUpperCase() !== 'TRUE' && String(cell.v).toUpperCase() !== 'FALSE') {
+                    strings.push(cell.v);
+                  }
+                }
+                
+                if (sheetName === 'notices' && strings.length >= 2) {
+                   sender = strings[0];
+                   content = strings[1];
+                } else if (strings.length >= 2) {
+                   sender = strings[0];
+                   content = strings.slice(1).join(' ');
+                } else if (strings.length === 1) {
+                   content = strings[0];
+                }
+                
+                if (content && content !== lastSheetAlertContent) {
+                  lastSheetAlertContent = content; 
+                  showEmergencyAlert({
+                    id: Date.now(),
+                    sender: sender,
+                    content: content,
+                    timestamp: new Date().toLocaleTimeString('ko-KR', { hour12: false })
+                  });
+                }
+                return; 
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 💡 시트에서 수동으로 체크를 풀었을 경우 대비 초기화
+      if (!foundTrueThisTick) {
+        lastSheetAlertContent = "";
+      }
+    }
+
+    async function pollEmergencyAlerts() {
+      try {
+        const res = await fetch(BACKEND_SERVER_URL + '/api/alerts/latest');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.alert && data.alert.id !== lastAlertId) {
+            lastAlertId = data.alert.id;
+            showEmergencyAlert(data.alert);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 4. 시계 및 라이브 상태 업데이트
     function updateClock() {
       const now = new Date();
       const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -542,7 +592,6 @@
       const dateEl = document.getElementById('clock-date');
       if (dateEl) dateEl.textContent = `${year}.${month}.${date} (${dayName})요일`;
 
-      // 최초 실행 시 오늘 요일 자동 포커스
       if (!hasInitializedDay) {
         hasInitializedDay = true;
         selectedDayName = dayName === '일' ? '월' : dayName;
@@ -550,9 +599,9 @@
       }
 
       updateLivePeriodStatus(now);
-      updateMealStatus(now); // 매초마다 식단 강조 및 스크롤 상태 체크
     }
 
+    // [수정됨] 현재 교시 강조를 위해 활성화된 교시 숫자를 추적합니다.
     function updateLivePeriodStatus(now) {
       const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const dayIdx = now.getDay();
@@ -573,7 +622,6 @@
 
       let currentActivePeriodNum = null;
       let activeFound = false;
-      
       for (let p of PERIOD_TIMINGS) {
         if (currentHM >= p.start && currentHM <= p.end) {
           activeFound = true;
@@ -585,7 +633,7 @@
           else if (p.type === "저녁") { subjectText = "저녁 식사시간 🌙"; teacherText = "급식실"; }
           else {
             const pNum = parseInt(p.type);
-            currentActivePeriodNum = pNum; // 현재 진행 중인 교시 숫자 저장
+            currentActivePeriodNum = pNum; // 현재 교시 번호 저장
             if (pNum <= 7) {
               const item = (regularTimetableData[todayName] || []).find(i => i.period === pNum);
               if (item) { subjectText = item.subject; teacherText = item.teacher; }
@@ -605,47 +653,45 @@
         else { badge.textContent = "쉬는시간"; info.textContent = "다음 수업 교재를 준비해 주세요."; }
       }
 
+      // 강조 함수 호출
       highlightActiveTimetable(currentActivePeriodNum);
     }
 
+    // [신규] 진행 중인 시간표 카드 시각적 강조 함수
     function highlightActiveTimetable(activePeriodNum) {
-      // 1. 모든 정규 수업 카드 초기화 (살짝 어둡게)
-      const regCards = document.querySelectorAll('[id^="period-card-reg-"]');
-      regCards.forEach(card => {
-        card.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-500/30 hover:bg-slate-800/60 transition-all duration-300 opacity-60";
-        card.children[0].className = "text-xs font-bold text-sky-400/50 w-14 transition-colors";
-        card.children[1].className = "text-lg font-bold text-slate-300 flex-1 mx-2 transition-colors";
-        card.children[2].className = "text-xs font-medium text-slate-400/50 transition-colors";
-      });
-
-      // 2. 모든 방과후 카드 초기화 (살짝 어둡게)
-      const aftCards = document.querySelectorAll('[id^="period-card-aft-"]');
-      aftCards.forEach(card => {
-        card.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-500/30 hover:bg-slate-800/60 transition-all duration-300 opacity-60";
-        card.children[0].className = "text-xs font-bold text-amber-400/50 w-14 transition-colors";
-        card.children[1].className = "text-lg font-bold text-slate-300 flex-1 mx-2 transition-colors";
-        card.children[2].className = "text-xs font-medium text-slate-400/50 transition-colors";
-      });
-
-      // 3. 오늘 요일 화면일 때만 현재 교시 카드 밝게 + 테두리 네온 효과 강조!
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-      if (selectedDayName !== dayNames[new Date().getDay()] || !activePeriodNum) return;
+      const todayName = dayNames[new Date().getDay()];
 
+      const allRegCards = document.querySelectorAll('[id^="period-card-reg-"]');
+      const allAftCards = document.querySelectorAll('[id^="period-card-aft-"]');
+
+      const baseRegClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition";
+      const baseAftClass = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition";
+
+      // 만약 오늘 요일 탭을 보고 있고, 진행 중인 교시가 있다면 나머지는 어둡게 처리
+      const isTodayTab = (selectedDayName === todayName);
+      const shouldDim = isTodayTab && activePeriodNum !== null;
+
+      allRegCards.forEach(card => {
+          card.className = baseRegClass + (shouldDim ? " opacity-40" : "");
+      });
+      allAftCards.forEach(card => {
+          card.className = baseAftClass + (shouldDim ? " opacity-40" : "");
+      });
+
+      // 조건 미달 시 기본 상태 유지 후 종료
+      if (!shouldDim || !activePeriodNum) return;
+
+      // 활성화된 카드 찾아서 네온 글로우 및 확대 효과 부여
       if (activePeriodNum <= 7) {
         const activeCard = document.getElementById(`period-card-reg-${activePeriodNum}`);
         if (activeCard) {
-          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 bg-sky-900/40 shadow-[0_0_15px_rgba(56,189,248,0.35)] ring-1 ring-sky-400/50 transition-all duration-500 transform scale-[1.02] z-10 opacity-100";
-          activeCard.children[0].className = "text-xs font-black text-sky-300 w-14 drop-shadow-md";
-          activeCard.children[1].className = "text-lg font-black text-white flex-1 mx-2 drop-shadow-md";
-          activeCard.children[2].className = "text-xs font-bold text-sky-200 drop-shadow-md";
+          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 bg-sky-900/60 shadow-[0_0_15px_rgba(56,189,248,0.4)] ring-1 ring-sky-400/50 transition-all duration-300 transform scale-[1.02] z-10 opacity-100";
         }
       } else {
         const activeCard = document.getElementById(`period-card-aft-${activePeriodNum}`);
         if (activeCard) {
-          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 bg-amber-900/40 shadow-[0_0_15px_rgba(251,191,36,0.35)] ring-1 ring-amber-400/50 transition-all duration-500 transform scale-[1.02] z-10 opacity-100";
-          activeCard.children[0].className = "text-xs font-black text-amber-300 w-14 drop-shadow-md";
-          activeCard.children[1].className = "text-lg font-black text-white flex-1 mx-2 drop-shadow-md";
-          activeCard.children[2].className = "text-xs font-bold text-amber-200 drop-shadow-md";
+          activeCard.className = "glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 bg-amber-900/60 shadow-[0_0_15px_rgba(251,191,36,0.4)] ring-1 ring-amber-400/50 transition-all duration-300 transform scale-[1.02] z-10 opacity-100";
         }
       }
     }
@@ -895,6 +941,7 @@
       renderTimetables();
     }
 
+    // [수정됨] 강조 표시를 위해 HTML 카드 태그에 고유 ID 추가
     function renderTimetables() {
       const regContainer = document.getElementById('regular-timetable-container');
       const aftContainer = document.getElementById('afterschool-timetable-container');
@@ -913,10 +960,10 @@
              regContainer.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm font-bold">예정된 정규 수업이 없습니다.</div>`;
           } else {
              regContainer.innerHTML = regList.map(item => `
-              <div id="period-card-reg-${item.period}" class="glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-500/30 hover:bg-slate-800/60 transition-all duration-300 opacity-60">
-                <span class="text-xs font-bold text-sky-400/50 w-14 transition-colors">${item.period}교시</span>
-                <span class="text-lg font-black text-slate-300 flex-1 mx-2 transition-colors">${item.subject}</span>
-                <span class="text-xs font-medium text-slate-400/50 transition-colors">${item.teacher}</span>
+              <div id="period-card-reg-${item.period}" class="glass-card p-3 flex items-center justify-between border-l-4 border-l-sky-400 hover:bg-slate-800/60 transition">
+                <span class="text-xs font-bold text-sky-300 w-14">${item.period}교시</span>
+                <span class="text-lg font-black text-white flex-1 mx-2">${item.subject}</span>
+                <span class="text-xs text-slate-400">${item.teacher}</span>
               </div>
             `).join('');
           }
@@ -929,16 +976,16 @@
            aftContainer.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm font-bold">방과후 일정이 없습니다.</div>`;
         } else {
            aftContainer.innerHTML = aftList.map(item => `
-            <div id="period-card-aft-${item.period}" class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-500/30 hover:bg-slate-800/60 transition-all duration-300 opacity-60">
-              <span class="text-xs font-bold text-amber-400/50 w-14 transition-colors">${item.period !== '-' ? item.period + '교시' : '-'}</span>
-              <span class="text-lg font-black text-slate-300 flex-1 mx-2 transition-colors">${item.subject}</span>
-              <span class="text-xs font-medium text-slate-400/50 transition-colors">${item.teacher || ''}</span>
+            <div id="period-card-aft-${item.period}" class="glass-card p-3 flex items-center justify-between border-l-4 border-l-amber-400 hover:bg-slate-800/60 transition">
+              <span class="text-xs font-bold text-amber-300 w-14">${item.period !== '-' ? item.period + '교시' : '-'}</span>
+              <span class="text-lg font-black text-white flex-1 mx-2">${item.subject}</span>
+              <span class="text-xs text-slate-400">${item.teacher || ''}</span>
             </div>
           `).join('');
         }
       }
       
-      // 탭을 눌러 렌더링 된 직후, 현재 교시(시간)에 맞춰 즉시 하이라이트 적용
+      // 시간표 렌더링 직후 현재 시간에 맞춰 강조 효과 즉시 적용
       updateLivePeriodStatus(new Date());
     }
 
@@ -977,100 +1024,54 @@
         });
     }
 
+    // [수정됨] 렌더링 완료 후 석식 자동 스크롤 기능 적용
     function renderMealCardsWithTiming(meals) {
       const container = document.getElementById('meals-container');
       if (!container || !meals) return;
 
-      // 정적 HTML 구조만 렌더링 (클래스 및 강조 효과는 updateMealStatus가 관리)
+      const now = new Date();
+      const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      const isToday = (currentDateForMeal.toDateString() === now.toDateString());
+      const isBreakfastActive = isToday && (currentHM <= "08:40");
+      const isLunchActive = isToday && (currentHM > "08:40" && currentHM <= "13:40");
+      const isDinnerActive = isToday && (currentHM > "13:40" && currentHM <= "18:10");
+
       container.innerHTML = `
-        <div id="meal-card-breakfast" class="glass-card p-3.5 border-l-4 border-l-slate-600 opacity-60 transition-all duration-300">
+        <div class="glass-card p-3.5 border-l-4 transition-all duration-300 ${isBreakfastActive ? 'border-l-emerald-400 bg-emerald-950/40 border-emerald-500/30 shadow-lg ring-1 ring-emerald-500/20' : 'border-l-slate-600 opacity-85'}">
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-slate-400 transition-colors">🌅 조식</span>
+            <span class="text-xs font-bold ${isBreakfastActive ? 'text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-slate-400'}">
+              🌅 조식 ${isBreakfastActive ? '(진행 중)' : ''}
+            </span>
           </div>
           <p class="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">${meals.breakfast}</p>
         </div>
-        <div id="meal-card-lunch" class="glass-card p-3.5 border-l-4 border-l-slate-600 opacity-60 transition-all duration-300">
+        <div class="glass-card p-3.5 border-l-4 transition-all duration-300 ${isLunchActive ? 'border-l-emerald-400 bg-emerald-950/40 border-emerald-500/30 shadow-lg ring-1 ring-emerald-500/20' : 'border-l-slate-600 opacity-85'}">
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-slate-400 transition-colors">☀️ 중식</span>
+            <span class="text-xs font-bold ${isLunchActive ? 'text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-slate-400'}">
+              ☀️ 중식 ${isLunchActive ? '(진행 중)' : ''}
+            </span>
           </div>
           <p class="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">${meals.lunch}</p>
         </div>
-        <div id="meal-card-dinner" class="glass-card p-3.5 border-l-4 border-l-slate-600 opacity-60 transition-all duration-300">
+        <div class="glass-card p-3.5 border-l-4 transition-all duration-300 ${isDinnerActive ? 'border-l-emerald-400 bg-emerald-950/40 border-emerald-500/30 shadow-lg ring-1 ring-emerald-500/20' : 'border-l-slate-600 opacity-85'}">
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-slate-400 transition-colors">🌙 석식</span>
+            <span class="text-xs font-bold ${isDinnerActive ? 'text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30' : 'text-slate-400'}">
+              🌙 석식 ${isDinnerActive ? '(진행 중)' : ''}
+            </span>
           </div>
           <p class="text-xs font-medium text-slate-200 leading-relaxed whitespace-pre-line">${meals.dinner}</p>
         </div>
       `;
 
-      // 렌더링 직후 현재 시간에 맞는 식단 강조 및 스크롤 실행
-      lastMealScrollPhase = ""; 
-      updateMealStatus(new Date());
-    }
-
-    let lastMealScrollPhase = "";
-
-    function updateMealStatus(now) {
-      const container = document.getElementById('meals-container');
-      const bCard = document.getElementById('meal-card-breakfast');
-      const lCard = document.getElementById('meal-card-lunch');
-      const dCard = document.getElementById('meal-card-dinner');
-      
-      if (!container || !bCard || !lCard || !dCard) return;
-
-      const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const isToday = (currentDateForMeal.toDateString() === now.toDateString());
-      
-      const isBreakfastActive = isToday && (currentHM <= "08:40");
-      const isLunchActive = isToday && (currentHM > "08:40" && currentHM <= "13:40");
-      const isDinnerActive = isToday && (currentHM > "13:40"); // 13:40 이후 하루 끝까지 석식 강조
-
-      let currentPhase = isBreakfastActive ? "breakfast" : (isLunchActive ? "lunch" : (isDinnerActive ? "dinner" : "none"));
-
-      // 조식 강조 로직
-      if (isBreakfastActive) {
-        bCard.className = "glass-card p-3.5 border-l-4 border-l-emerald-400 bg-emerald-950/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/30 transition-all duration-500 transform scale-[1.02] z-10 opacity-100";
-        bCard.querySelector('span').innerHTML = "🌅 조식 <strong class='ml-1 text-emerald-200'>(진행 중)</strong>";
-        bCard.querySelector('span').className = "text-xs font-black text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded border border-emerald-500/40 drop-shadow-md";
-      } else {
-        bCard.className = "glass-card p-3.5 border-l-4 border-l-slate-600 opacity-60 transition-all duration-500";
-        bCard.querySelector('span').innerHTML = "🌅 조식";
-        bCard.querySelector('span').className = "text-xs font-bold text-slate-400";
-      }
-
-      // 중식 강조 로직
-      if (isLunchActive) {
-        lCard.className = "glass-card p-3.5 border-l-4 border-l-emerald-400 bg-emerald-950/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/30 transition-all duration-500 transform scale-[1.02] z-10 opacity-100";
-        lCard.querySelector('span').innerHTML = "☀️ 중식 <strong class='ml-1 text-emerald-200'>(진행 중)</strong>";
-        lCard.querySelector('span').className = "text-xs font-black text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded border border-emerald-500/40 drop-shadow-md";
-      } else {
-        lCard.className = "glass-card p-3.5 border-l-4 border-l-slate-600 opacity-60 transition-all duration-500";
-        lCard.querySelector('span').innerHTML = "☀️ 중식";
-        lCard.querySelector('span').className = "text-xs font-bold text-slate-400";
-      }
-
-      // 석식 강조 로직
-      if (isDinnerActive) {
-        dCard.className = "glass-card p-3.5 border-l-4 border-l-emerald-400 bg-emerald-950/40 shadow-[0_0_15px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/30 transition-all duration-500 transform scale-[1.02] z-10 opacity-100";
-        dCard.querySelector('span').innerHTML = "🌙 석식 <strong class='ml-1 text-emerald-200'>(진행 중)</strong>";
-        dCard.querySelector('span').className = "text-xs font-black text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded border border-emerald-500/40 drop-shadow-md";
-      } else {
-        dCard.className = "glass-card p-3.5 border-l-4 border-l-slate-600 opacity-60 transition-all duration-500";
-        dCard.querySelector('span').innerHTML = "🌙 석식";
-        dCard.querySelector('span').className = "text-xs font-bold text-slate-400";
-      }
-
-      // ✨ 식단 자동 스크롤 (화면 전환 시 1번만 부드럽게 스르륵 이동)
-      if (lastMealScrollPhase !== currentPhase) {
-        lastMealScrollPhase = currentPhase;
-        setTimeout(() => {
-          if (currentPhase === "dinner") {
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' }); // 석식이면 맨 아래로
-          } else if (currentPhase === "breakfast" || currentPhase === "lunch") {
-            container.scrollTo({ top: 0, behavior: 'smooth' }); // 조식, 중식이면 맨 위로
-          }
-        }, 150);
-      }
+      // 스크롤 자동 조정 (석식이 켜져있으면 화면 맨 아래로, 아니면 맨 위로)
+      setTimeout(() => {
+        if (isDinnerActive) {
+          container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        } else {
+          container.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 150);
     }
 
     function changeMealDate(offset) {

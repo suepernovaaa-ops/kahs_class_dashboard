@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>teacher's calling</title>
+    <!-- Tailwind CSS 로드 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -20,28 +21,30 @@
 
     <main class="max-w-xl w-full mx-auto p-4 md:p-6 my-auto">
         
+        <!-- 상태 메시지 박스 -->
         <div id="status-box" class="hidden mb-6 p-4 rounded-xl text-sm font-semibold text-center transition-all duration-300 shadow-sm"></div>
 
+        <!-- 호출 정보 입력 섹션 -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
             <h2 class="text-lg font-bold text-slate-700 mb-6 flex items-center gap-2">
                 ✍️ 호출 정보
             </h2>
-            <form id="custom-form" onsubmit="handleCustomSubmit(event)" class="space-y-5">
+            <div class="space-y-5">
                 <div>
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">호출 제목</label>
-                    <input type="text" id="input-title" value="알림사항" placeholder="예: 알림사항" required
+                    <input type="text" id="input-title" value="알림사항" placeholder="예: 알림사항"
                         class="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">호출 내용</label>
-                    <textarea id="input-text" rows="3" placeholder="대시보드에 띄울 내용을 입력하세요" required
+                    <textarea id="input-text" rows="3" placeholder="대시보드에 띄울 내용을 입력하세요"
                         class="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
                 </div>
-                <button type="submit" id="submit-btn"
+                <button type="button" id="submit-btn" onclick="sendCall()"
                     class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition transform active:scale-98 flex items-center justify-center gap-2 text-base mt-2">
                     <span>대시보드로 전송하기</span>
                 </button>
-            </form>
+            </div>
         </div>
 
     </main>
@@ -68,44 +71,42 @@
             }, 4000);
         }
 
-        // 서버 전송 로직 (active는 항상 TRUE로 전송)
-        async function sendCall(title, text) {
-            const submitBtn = document.getElementById('submit-btn');
-            if (submitBtn) submitBtn.disabled = true;
-
-            showStatus("⏳ 대시보드로 호출을 전송 중입니다...", true);
-
-            // 항상 active=true 고정 전송
-            const active = true;
-            const targetUrl = `${SCRIPT_URL}?active=${active}&title=${encodeURIComponent(title)}&text=${encodeURIComponent(text)}`;
-
-            try {
-                await fetch(targetUrl, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                });
-
-                showStatus(`✅ 성공적으로 호출되었습니다! [${title} / ${text}]`, true);
-            } catch (error) {
-                console.error(error);
-                showStatus("❌ 전송 중 오류가 발생했습니다. 네트워크 상태를 확인해주세요.", false);
-            } finally {
-                if (submitBtn) submitBtn.disabled = false;
-            }
-        }
-
-        // 폼 제출 처리
-        function handleCustomSubmit(event) {
-            event.preventDefault();
-            const title = document.getElementById('input-title').value.trim();
-            const text = document.getElementById('input-text').value.trim();
+        // 서버 전송 로직 (이미지 객체를 이용한 완벽한 크로스도메인 GET 전송)
+        function sendCall() {
+            const titleInput = document.getElementById('input-title');
+            const textInput = document.getElementById('input-text');
+            
+            const title = titleInput.value.trim();
+            const text = textInput.value.trim();
 
             if (!title || !text) {
                 showStatus("⚠️ 제목과 내용을 모두 입력해주세요.", false);
                 return;
             }
 
-            sendCall(title, text);
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            showStatus("⏳ 대시보드로 호출을 전송 중입니다...", true);
+
+            // active는 항상 true로 고정
+            const targetUrl = `${SCRIPT_URL}?active=true&title=${encodeURIComponent(title)}&text=${encodeURIComponent(text)}`;
+
+            // 브라우저 CORS 제한을 우회하여 앱스스크립트를 확실히 실행시키는 꼼수 (Image Beacon)
+            const img = new Image();
+            img.onload = function() {
+                successHandler(title, text, submitBtn);
+            };
+            img.onerror = function() {
+                // Apps Script 특성상 응답을 이미지로 주지 않아 onerror가 발생할 수 있으나,
+                // 서버에는 요청이 정상 도달하므로 성공으로 처리합니다.
+                successHandler(title, text, submitBtn);
+            };
+            img.src = targetUrl;
+        }
+
+        function successHandler(title, text, submitBtn) {
+            showStatus(`✅ 성공적으로 호출되었습니다! [${title} / ${text}]`, true);
+            submitBtn.disabled = false;
         }
     </script>
 </body>

@@ -372,7 +372,7 @@
       return !invalidWords.includes(s);
     }
 
-    // 알림음 재생 전용 함수
+    // 알림음 재생 전용 함수 (분리)
     function playAlertSound() {
       if (!audioChimeEnabled) return;
       try {
@@ -382,16 +382,18 @@
         osc.connect(gain);
         gain.connect(ctx.destination);
         
-        osc.type = 'sine';
+        osc.type = 'sine'; // 맑고 부드러운 소리 파형
         const now = ctx.currentTime;
         
+        // '딩' 소리 (880Hz)
         osc.frequency.setValueAtTime(880, now);
         gain.gain.setValueAtTime(0.8, now);
         gain.gain.exponentialRampToValueAtTime(0.1, now + 0.4);
         
+        // '동' 소리 (659.25Hz)
         osc.frequency.setValueAtTime(659.25, now + 0.4);
         gain.gain.setValueAtTime(0.8, now + 0.4);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0); // 1초 지점에서 완전히 소멸
         
         osc.start(now);
         osc.stop(now + 1.0);
@@ -406,6 +408,7 @@
       if (audioChimeEnabled) {
         btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
         btn.classList.replace('text-slate-500', 'text-slate-300');
+        // 스피커를 켤 때 테스트 음원을 재생하여 브라우저 오디오 권한 획득!
         playAlertSound(); 
       } else {
         btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
@@ -466,6 +469,7 @@
       renderAlertHistory();
     }
 
+    // 긴급 알림 팝업 함수
     function showEmergencyAlert(alertData) {
       document.getElementById('emergency-sender').textContent = alertData.sender || '교무실';
       document.getElementById('emergency-content').textContent = alertData.content || '';
@@ -483,9 +487,11 @@
       localStorage.setItem('hk_alerts', JSON.stringify(alertHistory));
       renderAlertHistory();
 
+      // 알림음 호출
       playAlertSound();
     }
 
+    // 구글 시트 TRUE 체크박스 기반 호출 감지기
     async function pollGoogleSheetAlerts() {
       const sheetNames = ['호출', 'alerts', 'notices', 'alram2622']; 
       let foundTrueThisTick = false;
@@ -819,20 +825,12 @@
       renderTimetables();
     }
 
-    // 6. 방과후학교 구글 시트 파싱 (10월~1월 GID 매핑 완벽 대응)
+    // 6. 방과후학교 구글 시트 파싱
     async function fetchGoogleSheetsAfterschoolSchedule() {
       const currentMonth = currentDateForMeal.getMonth() + 1;
+      const monthSheetName = `${currentMonth}월`;
       const sheetId = '13_kWSLwjIynNBEfQAfw2sQkkBBN5Zy9aqvWIOe7bmg4';
-
-      const monthGidMap = {
-        10: '987912871',
-        11: '212747753',
-        12: '119730049',
-        1: '609021176'
-      };
-
-      const targetGid = monthGidMap[currentMonth] || '987912871';
-      const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&gid=${targetGid}&_t=${Date.now()}`;
+      const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=0&sheet=${encodeURIComponent(monthSheetName)}`;
 
       afterschoolTimetableData = { '월': [], '화': [], '수': [], '목': [], '금': [], '토': [] };
       afterschoolTimetableData['월'] = [
@@ -842,31 +840,16 @@
         { period: 11, subject: 'TOEIC/한국사', teacher: '' }
       ];
 
-      const getCellValue = (rows, rIdx, cIdx) => {
-        try {
-          if (rows && rows[rIdx] && rows[rIdx].c && rows[rIdx].c[cIdx]) {
-            const cell = rows[rIdx].c[cIdx];
-            if (!cell) return "";
-            return String(cell.f || cell.v || "").trim();
-          }
-        } catch (e) {}
-        return "";
-      };
-
       try {
         const res = await fetch(gvizUrl);
-        if (!res.ok) throw new Error("방과후 시트 응답 실패");
-
         const text = await res.text();
         const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
-        
         if (!jsonMatch) {
-          renderTimetables();
-          return;
+            renderTimetables();
+            return;
         }
-
         const data = JSON.parse(jsonMatch[1]);
-        const rows = (data.table && data.table.rows) ? data.table.rows : [];
+        const rows = data.table.rows;
 
         const dom = currentDateForMeal.getDate();
         const weekIdx = Math.min(Math.ceil(dom / 7), 5);
@@ -881,14 +864,18 @@
         ['화', '수', '목'].forEach(day => {
           const colIdx = dayCols[day];
           const daySchedule = [];
-
           [8, 9, 10, 11].forEach((period, pIdx) => {
             const rowIdx = targetRows[pIdx];
-            const val = getCellValue(rows, rowIdx, colIdx);
+            let val = "";
+            try {
+              if (rows[rowIdx] && rows[rowIdx].c && rows[rowIdx].c[colIdx]) {
+                const cell = rows[rowIdx].c[colIdx];
+                val = cell.f || cell.v || "";
+              }
+            } catch (e) { val = ""; }
+
             let parsed = splitSubjectAndTeacher(val);
-            if (!parsed.subject || ['null', 'undefined', ''].includes(parsed.subject)) {
-              parsed.subject = "수업 없음";
-            }
+            if (!parsed.subject) parsed.subject = "수업 없음";
             daySchedule.push({ period, subject: parsed.subject, teacher: parsed.teacher });
           });
           afterschoolTimetableData[day] = daySchedule;
@@ -899,12 +886,22 @@
         const friColIdx = 41; 
         const friSchedule = [];
         
-        const period6Val = getCellValue(rows, friTargetRows[0], friColIdx);
+        let period6Val = "";
+        try {
+          if (rows[friTargetRows[0]] && rows[friTargetRows[0]].c && rows[friTargetRows[0]].c[friColIdx]) {
+            period6Val = String(rows[friTargetRows[0]].c[friColIdx].f || rows[friTargetRows[0]].c[friColIdx].v || "").trim();
+          }
+        } catch(e) {}
 
-        if (period6Val && !['수업 없음', '-', 'null', 'undefined', ''].includes(period6Val)) {
+        if (period6Val && period6Val !== "수업 없음" && period6Val !== "-" && period6Val !== "null" && period6Val !== "undefined") {
           [6, 7, 8].forEach((period, pIdx) => {
             const rowIdx = friTargetRows[pIdx];
-            const val = getCellValue(rows, rowIdx, friColIdx);
+            let val = "";
+            try {
+              if (rows[rowIdx] && rows[rowIdx].c && rows[rowIdx].c[friColIdx]) {
+                val = String(rows[rowIdx].c[friColIdx].f || rows[rowIdx].c[friColIdx].v || "").trim();
+              }
+            } catch(e) {}
             let parsed = splitSubjectAndTeacher(val);
             if (!parsed.subject) parsed.subject = "방과후";
             friSchedule.push({ period, subject: parsed.subject, teacher: parsed.teacher });
@@ -920,10 +917,15 @@
         };
         const satRows = satWeekRowOffsets[weekIdx] || satWeekRowOffsets[4];
         const satSchedule = [];
-
         satRows.forEach((rowIdx, pIdx) => {
           const period = pIdx + 1;
-          const val = getCellValue(rows, rowIdx, 50);
+          let val = "";
+          try {
+            if (rows[rowIdx] && rows[rowIdx].c && rows[rowIdx].c[50]) {
+              const cell = rows[rowIdx].c[50];
+              val = (cell.f || cell.v || "").toString().trim();
+            }
+          } catch(e) { val = ""; }
           let parsed = splitSubjectAndTeacher(val);
           if (!parsed.subject) parsed.subject = "수업 없음";
           satSchedule.push({ period, subject: parsed.subject, teacher: parsed.teacher });
@@ -931,9 +933,8 @@
         afterschoolTimetableData['토'] = satSchedule;
 
       } catch (err) {
-        console.error("방과후 시트 GID 연동 오류:", err);
+          console.error("방과후 시트 파싱 에러:", err);
       }
-
       renderTimetables();
     }
 
